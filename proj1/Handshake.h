@@ -2,21 +2,22 @@
 #define __HANDSHAKE__
 
 
-struct Handshake
+typedef struct
 {
     int bytes;
-    char flagB;
+    char flag_b;
     char address;
     char control;
-    char BCC;
-    char flagE;
-};
+    char bcc;
+    char flag_e;
+}Handshake;
 
 /*
     Creates a new handshake initialize at 0
     @returns A pointer to the Handshake
 */
 Handshake* create_Handshake();
+
 /*
     @param byte - Byte to be processed
     @param Handshake - Handshake where the byte will be incerted into

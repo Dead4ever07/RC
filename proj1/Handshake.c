@@ -12,7 +12,7 @@ int process_byte(char byte, Handshake *handshake)
     switch (handshake->bytes)
     {
     case 0:
-        handshake->FlagB = byte;
+        handshake->flag_b = byte;
         break;
     case 1:
         handshake->address = byte;
@@ -21,17 +21,18 @@ int process_byte(char byte, Handshake *handshake)
         handshake->control = byte;
         break;
     case 3:
-        handshake->BCC = byte;
+        handshake->bcc = byte;
         if (byte != handshake->address ^ handshake->control)
             return -1;
         break;
     case 4:
-        handshake->FlagE = byte;
+        handshake->flag_e = byte;
         break;
     default:
         return 1;
         break;
     }
+    handshake->bytes++;
     return 0;
 }
 
