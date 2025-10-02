@@ -1,41 +1,42 @@
 #include "Handshake.h"
 #include <stdlib.h>
 
-Handshake *create_Handshake()
+Packet *new_packet()
 {
-    Handshake *handshake = malloc(sizeof(Handshake));
-    handshake->bytes = 0;
+    Packet *package_handler = malloc(sizeof(Packet));
+    memset(package_handler,0,sizeof(Packet));
+    return package_handler;
 }
 
-int process_byte(char byte, Handshake *handshake)
+int process_byte(char byte, Packet *packet)
 {
-    switch (handshake->bytes)
+    switch (packet->bytes)
     {
     case 0:
-        handshake->flag_b = byte;
+        packet->flag_b = byte;
         break;
     case 1:
-        handshake->address = byte;
+        packet->address = byte;
         break;
     case 2:
-        handshake->control = byte;
+        packet->control = byte;
         break;
     case 3:
-        handshake->bcc = byte;
-        if (byte != handshake->address ^ handshake->control)
+        packet->bcc = byte;
+        if (byte != packet->address ^ packet->control)
             return -1;
         break;
     case 4:
-        handshake->flag_e = byte;
+        packet->flag_e = byte;
         break;
     default:
         return 1;
         break;
     }
-    handshake->bytes++;
+    packet->bytes++;
     return 0;
 }
 
-int number_bytes_received(Handshake* handshake){
-    return handshake->bytes;
+int number_bytes_received(Packet* packet){
+    return packet->bytes;
 }
