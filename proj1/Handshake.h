@@ -19,7 +19,7 @@ typedef struct
     Creates a new handshake initialize at 0
     @returns A pointer to the Handshake
 */
-Packet* create_Handshake();
+Packet* create_packet();
 
 /*
     @param byte - Byte to be processed

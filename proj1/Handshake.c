@@ -1,7 +1,7 @@
 #include "Handshake.h"
 #include <stdlib.h>
 
-Packet *new_packet()
+Packet *create_packet()
 {
     Packet *package_handler = malloc(sizeof(Packet));
     memset(package_handler,0,sizeof(Packet));
