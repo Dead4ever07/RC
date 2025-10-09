@@ -1,135 +1,21 @@
-// Example of how to write to the serial port in non-canonical mode
-//
-// Modified by: Eduardo Nuno Almeida [enalmeida@fe.up.pt]
+// Serial port interface implementation
+// DO NOT CHANGE THIS FILE
+
+#include "serial_port.h"
 
 #include <fcntl.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <termios.h>
 #include <unistd.h>
 
+// MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
-
-#define FALSE 0
-#define TRUE 1
-
-#define BAUDRATE 38400
-#define BUF_SIZE 256
-
-#define FLAG 0x7E
-#define ADDR_SENDER 0x03
-#define CTRL_SET 0x03
 
 int fd = -1;           // File descriptor for open serial port
 struct termios oldtio; // Serial port settings to restore on closing
-volatile int STOP = FALSE;
-
-int openSerialPort(const char *serialPort, int baudRate);
-int closeSerialPort();
-int readByteSerialPort(unsigned char *byte);
-int writeBytesSerialPort(const unsigned char *bytes, int nBytes);
-
-// ---------------------------------------------------
-// MAIN
-// ---------------------------------------------------
-int main(int argc, char *argv[])
-{
-    if (argc < 2)
-    {
-        printf("Incorrect program usage\n"
-               "Usage: %s <SerialPort>\n"
-               "Example: %s /dev/ttyS0\n",
-               argv[0],
-               argv[0]);
-        exit(1);
-    }
-
-    // Open serial port device for reading and writing, and not as controlling tty
-    // because we don't want to get killed if linenoise sends CTRL-C.
-    //
-    // NOTE: See the implementation of the serial port library in "serial_port/".
-    const char *serialPort = argv[1];
-
-    if (openSerialPort(serialPort, BAUDRATE) < 0)
-    {
-        perror("openSerialPort");
-        exit(-1);
-    }
-
-    printf("Serial port %s opened\n", serialPort);
-
-    // Create string to send
-    unsigned char buf[BUF_SIZE] = {0};
-
-    buf[0] = FLAG;
-    buf[1] = ADDR_SENDER;
-    buf[2] = CTRL_SET;
-    buf[3] = ADDR_SENDER ^ CTRL_SET;
-    buf[4] = FLAG;
-    // In non-canonical mode, '\n' does not end the writing.
-    // Test this condition by placing a '\n' in the middle of the buffer.
-    // The whole buffer must be sent even with the '\n'.
-
-
-    int bytes = writeBytesSerialPort(buf, 5);
-    printf("%d bytes written to serial port\n", bytes);
-
-    // Wait until all bytes have been written to the serial port
-    sleep(1);
-
-    int nBytesBuf = 0;
-    unsigned char  Flag = 0;
-    unsigned char Address = 0; 
-    unsigned char Control = 0;
-    unsigned char BCC = 0;
-    while(STOP == FALSE){
-        unsigned char byte;
-        int bytes = readByteSerialPort(&byte);
-        if(bytes == -1){
-            printf("Error while reading bytes\n");
-            return 1;
-        }
-        else if(bytes == 0) continue;
-        
-        if(!Flag) Flag = byte;
-        else if(!Address) Address = byte;
-        else if (! Control) Control = byte;
-        else if(!BCC){
-            BCC = byte;
-            if(BCC == (Address ^ Control)){
-                printf("The BCC is right\n");
-            }else{
-                printf("The BCC is wrong\n");
-            }
-        }
-        else{
-            if(byte == FLAG){
-                printf("Message received correctly\n");
-            }else{
-                printf("Last message not received\n");
-            }
-            STOP = TRUE;
-        }
-    }
-
-    // Close serial port
-    if (closeSerialPort() < 0)
-    {
-        perror("closeSerialPort");
-        exit(-1);
-    }
-
-    printf("Serial port %s closed\n", serialPort);
-
-    return 0;
-}
-
-// ---------------------------------------------------
-// SERIAL PORT LIBRARY IMPLEMENTATION
-// ---------------------------------------------------
 
 // Open and configure the serial port.
 // Returns -1 on error.
