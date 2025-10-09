@@ -25,9 +25,6 @@ int process_byte_receiver(char byte, Packet *packet)
     case CONTROL:
         process_bcc(byte, packet);
         break;
-    case CHECKED:
-        return process_data(byte,packet);
-        break;
     default:
         return -1;
         break;
