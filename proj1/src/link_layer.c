@@ -27,6 +27,7 @@ void alarmHandler(int signal)
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
 int readByteWithAlarm(char *byte);
 int readResponseAndCompare(char *ackRef);
+
 ////////////////////////////////////////////////
 // LLOPEN
 ////////////////////////////////////////////////
@@ -49,7 +50,23 @@ int llopen(LinkLayer connectionParameters)
     }
 
     if (connectionParameters.role == LlTx)
-    {
+    {   
+        if(sendFrame(SET_COMMAND, 4, UA_COMMAND) != 0)
+        {
+            return 1;
+        }
+
+    }else{
+        if (readBytesAndCompare(SET_COMMAND) != 0)
+        {
+            return 1;
+        }
+        if (writeBytesSerialPort(UA_COMMAND, COMMAND_SIZE) != COMMAND_SIZE)
+        {
+            printf("Error sending the UA command through the serial port.\n");
+            return 1;
+        }
+        
     }
 
     return 0;
@@ -60,7 +77,9 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    // TODO: Implement this function
+    if (sendFrame(buf,bufSize, RR_COMMAND) != 0){
+        return -1;
+    }
 
     return 0;
 }
@@ -89,8 +108,12 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose()
 {
-    // TODO: Implement this function
-
+     //ver isto melhor
+    if (closeSerialPort() != 0)
+    {
+        printf("Error closing the Serial port\n");
+        return -1;
+    }
     return 0;
 }
 
@@ -105,32 +128,37 @@ int llclose()
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
 {
     int try = 0;
-    int sent = FALSE;
-    do
+    while (try<config.nRetransmissions)
     {
         try++;
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
+        {
             continue;
+        }
+            
             
         if (readResponseAndCompare(ackByte) != 0)
+        {
             continue;
-
-        sent == TRUE;
-    } while (!sent && try<config.nRetransmissions);
-    return 0;
+        }else{
+            return -1;
+        }
+    }
+    printf("Coudn't send Frame in the nRetransmissions\n");
+    return -1;
 }
 
 /// @brief
 /// @param ackRef
 /// @return returns 0 if successfull
-int readResponseAndCompare(char *ackRef)
+int readBytesAndCompare(char *bytesRef)
 {
     char *byteReceived;
     char pos = 0;
     char buff[COMMAND_SIZE];
     while (pos < COMMAND_SIZE)
     {
-        if (readByteWithAlarm(buff[pos]) != 1 && buff[pos] != ackRef[pos])
+        if (readByteWithAlarm(buff[pos]) != 1 || buff[pos] != bytesRef[pos])
         {
             return -1;
         }
@@ -148,6 +176,7 @@ int readByteWithAlarm(char *byte)
         alarm(config.timeout);
         alarmEnabled = TRUE;
     }
+
     int nbytes = readByteSerialPort(byte);
     alarm(0);
     alarmEnabled = FALSE;
