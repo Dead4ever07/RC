@@ -4,6 +4,16 @@
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
 
+#define FLAG_VALUE 0x7E
+#define ADDRESS_UA 0x03
+#define ADDRESS_SET 0x03
+#define CTRL_UA 0x07
+#define CTRL_SET 0x03
+#define CTRL_RR 0x05
+#define CTRL_REJ 0x01
+#define CTRL_DISC 0x0B
+#define COMMAND_SIZE 4
+
 typedef enum
 {
     LlTx,
