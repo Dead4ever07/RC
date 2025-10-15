@@ -26,7 +26,7 @@ void alarmHandler(int signal)
 
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
 int readByteWithAlarm(char *byte);
-int readResponseAndCompare(char *ackRef);
+int readBytesAndCompare(char *ackRef);
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -49,19 +49,22 @@ int llopen(LinkLayer connectionParameters)
         exit(1);
     }
 
+    char setCommand[COMMAND_SIZE] = SET_COMMAND
+    char UACommand[COMMAND_SIZE] = UA_COMMAND;
     if (connectionParameters.role == LlTx)
     {   
-        if(sendFrame(SET_COMMAND, 4, UA_COMMAND) != 0)
+        
+        if(sendFrame(setCommand, 4, UACommand) != 0)
         {
             return 1;
         }
 
     }else{
-        if (readBytesAndCompare(SET_COMMAND) != 0)
+        if (readBytesAndCompare(setCommand) != 0)
         {
             return 1;
         }
-        if (writeBytesSerialPort(UA_COMMAND, COMMAND_SIZE) != COMMAND_SIZE)
+        if (writeBytesSerialPort(UACommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
             printf("Error sending the UA command through the serial port.\n");
             return 1;
@@ -137,7 +140,7 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
         }
             
             
-        if (readResponseAndCompare(ackByte) != 0)
+        if (readBytesAndCompare(ackByte) != 0)
         {
             continue;
         }else{
