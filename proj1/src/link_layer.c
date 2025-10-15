@@ -5,6 +5,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
@@ -24,7 +26,7 @@ void alarmHandler(int signal)
     printf("Alarm #%d received\n", alarmCount);
 }
 
-int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
+int sendFrame(char *bytes, int nBytes, char *ackByte);
 int readByteWithAlarm(char *byte);
 int readBytesAndCompare(char *ackRef);
 
@@ -49,12 +51,12 @@ int llopen(LinkLayer connectionParameters)
         exit(1);
     }
 
-    char setCommand[COMMAND_SIZE] = SET_COMMAND
+    char setCommand[COMMAND_SIZE] = SET_COMMAND;
     char UACommand[COMMAND_SIZE] = UA_COMMAND;
     if (connectionParameters.role == LlTx)
     {   
         
-        if(sendFrame(setCommand, 4, UACommand) != 0)
+        if(sendFrame(setCommand, COMMAND_SIZE, UACommand) != 0)
         {
             return 1;
         }
@@ -75,23 +77,16 @@ int llopen(LinkLayer connectionParameters)
     return 0;
 }
 
-////////////////////////////////////////////////
-// LLWRITE
-////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    if (sendFrame(buf,bufSize, RR_COMMAND) != 0){
-        return -1;
-    }
+
 
     return 0;
 }
 
-////////////////////////////////////////////////
-// LLREAD
-////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
+
     /*
     llread cookbook:
         - receive first 4 bytes {FLAG,ADRSS,CTRL,BCC}
@@ -123,12 +118,12 @@ int llclose()
 
 
 
-/// @brief Responsible to the sent of a package
-/// @param bytes 
-/// @param nBytes 
-/// @param ackByte 
-/// @return 
-int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
+/// @brief Responsible to send a package in N tries
+/// @param bytes The frame to be sent
+/// @param nBytes The number of bytes in the frame
+/// @param ackByte The Response byte expected
+/// @return returns 0 on success
+int sendFrame(char *bytes, int nBytes, char *ackByte)
 {
     int try = 0;
     while (try<config.nRetransmissions)
@@ -142,17 +137,19 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
             
         if (readBytesAndCompare(ackByte) != 0)
         {
+            printf("Error while reading/comparing bytes\n");
             continue;
         }else{
-            return -1;
+
+            return 0;
         }
     }
     printf("Coudn't send Frame in the nRetransmissions\n");
     return -1;
 }
 
-/// @brief
-/// @param ackRef
+/// @brief Responsible to read a response and compare with the expected
+/// @param bytesRef expected bytes on successfull response 
 /// @return returns 0 if successfull
 int readBytesAndCompare(char *bytesRef)
 {
@@ -163,14 +160,15 @@ int readBytesAndCompare(char *bytesRef)
     {
         if (readByteWithAlarm(buff[pos]) != 1 || buff[pos] != bytesRef[pos])
         {
+            printf("Erro while reading bytes, either number of bytes wrong, or wrong response\n");
             return -1;
         }
         pos++;
     }
     return 0;
 }
-/// @brief
-/// @param byte
+/// @brief Responsible to read a response without blocking, using an alarm
+/// @param byte Responsible to read a response without 
 /// @return the number of bytes read or -1 in case of error
 int readByteWithAlarm(char *byte)
 {
@@ -185,3 +183,7 @@ int readByteWithAlarm(char *byte)
     alarmEnabled = FALSE;
     return nbytes;
 }
+
+
+// Perguntas para o prof, para ler um commando é necessário tentar ler 3 vezes? Ou é só ao enviar
+// Quando lemos um commando é necessário usar um alarm?
