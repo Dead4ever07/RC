@@ -17,8 +17,6 @@
 LinkLayer config;
 int timeout;
 
-
-
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
 int sendDiscCommand(unsigned char *discCommand);
 
@@ -39,6 +37,7 @@ int llopen(LinkLayer connectionParameters)
     alarmSetup();
     if (connectionParameters.role == LlTx)
     {
+        printf("Running as Transmitter\n");
         unsigned char setCommand[] = SET_COMMAND;
         unsigned char uaCommand[] = UA_COMMAND;
         if (sendFrame(setCommand, COMMAND_SIZE, uaCommand) != 0)
@@ -48,6 +47,7 @@ int llopen(LinkLayer connectionParameters)
     }
     else
     {
+        printf("Running as Reciver\n");
         unsigned char setCommand[] = SET_COMMAND;
         unsigned char uaCommand[] = UA_COMMAND;
         if (readBytesAndCompare(setCommand) != 0)
@@ -78,16 +78,17 @@ int llread(unsigned char *packet)
     {
         unsigned char byte;
         int resp = readByteWithAlarm(&byte);
-        
+
         if (resp > 0)
         {
             int res = processByte(byte, packet, curr_frame);
             if (res < 0)
             {
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
-                writeBytesSerialPort(response,COMMAND_SIZE);
+                writeBytesSerialPort(response, COMMAND_SIZE);
             }
-            else if (res > 0){
+            else if (res > 0)
+            {
                 curr_frame ^= 1;
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame));
                 writeBytesSerialPort(response, COMMAND_SIZE);
@@ -98,9 +99,12 @@ int llread(unsigned char *packet)
         {
             printf("Couldn't read the byte from the serial port, an error ocurred\n");
             return -1;
-        }else{
+        }
+        else
+        {
             tries++;
-            if(tries == config.nRetransmissions){
+            if (tries == config.nRetransmissions)
+            {
                 printf("Couldn't read from the transmitor in %d tentatives\n", tries);
                 return -1;
             }
@@ -185,19 +189,20 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
     int try = 0;
     while (try < config.nRetransmissions)
     {
+        printf("Sending frame try nº%d\n",try);
         try++;
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
         {
             continue;
         }
-        if (readBytesAndCompare(ackByte) != 0)
+        if (readBytesAndCompare(ackByte) == 0)
         {
-            printf("Error while reading/comparing bytes\n");
-            continue;
+            return 0;
         }
         else
         {
-            return 0;
+            printf("Error while reading/comparing bytes\n");
+            continue;
         }
     }
     printf("Coudn't send Frame in the nRetransmissions\n");

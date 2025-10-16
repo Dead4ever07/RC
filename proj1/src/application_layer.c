@@ -16,16 +16,16 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     linkLayer.timeout = timeout;
     FILE *fptr;
 
-    fptr = fopen(filename, "wb+");
-    if (fptr == NULL)
-    {
-        printf("Unable to open/create the file\n");
-        return;
-    }
     unsigned char buffPayload[MAX_PAYLOAD_SIZE];
 
     if (role[0] == 't')
     {
+        fptr = fopen(filename, "r");
+        if (fptr == NULL)
+        {
+            printf("Unable to open/create the file\n");
+            return;
+        }
         linkLayer.role = LlTx;
         llopen(linkLayer);
         while (TRUE)
@@ -34,6 +34,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             int nbytes = fread(buffPayload, 1, MAX_PAYLOAD_SIZE, fptr);
             if (nbytes == 0)
             {
+                printf("the number of bytes read on the file is 0\n");
                 return;
             }
             llwrite(buffPayload, nbytes);
@@ -43,16 +44,23 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     }
     else
     {
+        fptr = fopen(filename, "w+");
+        if (fptr == NULL)
+        {
+            printf("Unable to open/create the file\n");
+            return;
+        }
+
         linkLayer.role = LlRx;
         llopen(linkLayer);
         int nBytes = 0;
-        do{
+        do
+        {
             nBytes = llread(buffPayload);
             fwrite(buffPayload, nBytes, 1, fptr);
-        }while(nBytes>0);
+        } while (nBytes > 0);
         fclose(fptr);
-        llclose();        
-        
+        llclose();
     }
     return;
 }

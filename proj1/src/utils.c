@@ -16,6 +16,7 @@ int BCC2 = 0;
 
 int readBytesAndCompare(unsigned char *bytesRef)
 {
+    printf("Reading bytes and comparing\n");
     int pos = 0;
     unsigned char buff[COMMAND_SIZE];
     while (pos < COMMAND_SIZE)
