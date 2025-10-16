@@ -5,6 +5,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>  // Added for alarm()
 
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
@@ -25,8 +28,9 @@ void alarmHandler(int signal)
 }
 
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
-int readByteWithAlarm(char *byte);
-int readResponseAndCompare(char *ackRef);
+int readByteWithAlarm(unsigned char *byte);
+int readBytesAndCompare(unsigned char *ackRef);
+int sendDiscCommand(unsigned char *discCommand);
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -50,21 +54,26 @@ int llopen(LinkLayer connectionParameters)
     }
 
     if (connectionParameters.role == LlTx)
-    {   
-        if(sendFrame(SET_COMMAND, 4, UA_COMMAND) != 0)
+    {  
+        unsigned char setCommand[] = SET_COMMAND;
+        unsigned char uaCommand[] = UA_COMMAND;
+        if(sendFrame(setCommand, 4, uaCommand) != 0)
         {
-            return 1;
+            return -1;
         }
 
     }else{
-        if (readBytesAndCompare(SET_COMMAND) != 0)
+        unsigned char setCommand[] = SET_COMMAND;
+        unsigned char uaCommand[] = UA_COMMAND;
+        if (readBytesAndCompare(setCommand) != 0)
         {
-            return 1;
+            return -1;
         }
-        if (writeBytesSerialPort(UA_COMMAND, COMMAND_SIZE) != COMMAND_SIZE)
+
+        if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
             printf("Error sending the UA command through the serial port.\n");
-            return 1;
+            return -1;
         }
         
     }
@@ -77,10 +86,6 @@ int llopen(LinkLayer connectionParameters)
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    if (sendFrame(buf,bufSize, RR_COMMAND) != 0){
-        return -1;
-    }
-
     return 0;
 }
 
@@ -92,7 +97,7 @@ int llread(unsigned char *packet)
     /*
     llread cookbook:
         - receive first 4 bytes {FLAG,ADRSS,CTRL,BCC}
-        - receive each byte from serial port until it's a FLAG
+        - receive each byte from serial port until it's a FLAG 
         - BCC2 is the last byte execpt from FLAG
         - To process the BCC2 the only thing you need to do is Xor d1,d2,d3... BCC2
         and compare the result with 0.
@@ -108,7 +113,40 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose()
 {
-     //ver isto melhor
+    if(config.role == LlRx)
+    {
+        unsigned char discCommand[] = SENDER_DISC_COMMAND;
+
+        if (sendDiscCommand(discCommand) != 0){
+            return -1;
+        }
+    }else {
+        unsigned char discCommand[] = RECEIVER_DISC_COMMAND;
+
+        if (sendDiscCommand(discCommand) != 0){
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/// @brief Responsible to the sending the disc command and the ua response
+/// @param discCommand it depends on the role
+/// @return 0 if nothing went wrong
+int sendDiscCommand(unsigned char *discCommand){
+
+    unsigned char uaCommand[] = UA_COMMAND;
+
+    if(sendFrame(discCommand, 4, discCommand) != 0)
+    {
+        return -1;
+    }
+    if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
+    {
+        printf("Error sending the UA command through the serial port.\n");
+        return 1;
+    }
+
     if (closeSerialPort() != 0)
     {
         printf("Error closing the Serial port\n");
@@ -134,14 +172,12 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
         {
             continue;
-        }
-            
-            
-        if (readResponseAndCompare(ackByte) != 0)
+        }     
+        if (readBytesAndCompare(ackByte) != 0)
         {
             continue;
         }else{
-            return -1;
+            return 0;
         }
     }
     printf("Coudn't send Frame in the nRetransmissions\n");
@@ -151,14 +187,13 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
 /// @brief
 /// @param ackRef
 /// @return returns 0 if successfull
-int readBytesAndCompare(char *bytesRef)
+int readBytesAndCompare(unsigned char *bytesRef)
 {
-    char *byteReceived;
-    char pos = 0;
-    char buff[COMMAND_SIZE];
+    int pos = 0;  // Changed from char to int
+    unsigned char buff[COMMAND_SIZE];
     while (pos < COMMAND_SIZE)
     {
-        if (readByteWithAlarm(buff[pos]) != 1 || buff[pos] != bytesRef[pos])
+        if (readByteWithAlarm(&buff[pos]) != 1 || buff[pos] != bytesRef[pos])
         {
             return -1;
         }
@@ -169,7 +204,7 @@ int readBytesAndCompare(char *bytesRef)
 /// @brief
 /// @param byte
 /// @return the number of bytes read or -1 in case of error
-int readByteWithAlarm(char *byte)
+int readByteWithAlarm(unsigned char *byte)
 {
     if (alarmEnabled == FALSE)
     {
