@@ -23,9 +23,8 @@ typedef enum{
 ///
 /// Positive, the number of bytes stored in the packet
 /// 
-int processByte(unsigned char byte, char* payload,int curr_packet);
+int processByte(unsigned char byte, unsigned char* payload,int curr_packet);
 
-int processData(char byte, char* packet);
 
 /// @brief Responsible to read a response and compare with the expected
 /// @param bytesRef expected bytes on successfull response 

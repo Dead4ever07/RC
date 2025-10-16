@@ -20,9 +20,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     if (fptr == NULL)
     {
         printf("Unable to open/create the file\n");
-        return -1;
+        return;
     }
-    char buffPayload[MAX_PAYLOAD_SIZE];
+    unsigned char buffPayload[MAX_PAYLOAD_SIZE];
 
     if (role[0] == 't')
     {
@@ -34,7 +34,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             int nbytes = fread(buffPayload, 1, MAX_PAYLOAD_SIZE, fptr);
             if (nbytes == 0)
             {
-                return 0;
+                return;
             }
             llwrite(buffPayload, nbytes);
         }
@@ -54,5 +54,5 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         llclose();        
         
     }
-    return 0;
+    return;
 }

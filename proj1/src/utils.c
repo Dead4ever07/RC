@@ -1,6 +1,10 @@
+#include <stdio.h>
+#include <unistd.h>
 #include "utils.h"
 #include "macros.h"
 #include "alarm.h"
+#include "serial_port.h"
+
 
 extern int alarmEnabled;
 extern int timeout;
@@ -40,35 +44,8 @@ int readByteWithAlarm(unsigned char *byte)
     return nbytes;
 }
 
-int processByte(unsigned char byte, char *payload, int curr_frame)
-{
 
-    const int curr = curr_frame;
-    switch (state)
-    {
-    case START:
-        return processStart(byte);
-        break;
-    case ADDRESS:
-        return processAddress(byte);
-        break;
-    case CTRL:
-        return processControl(byte, curr_frame);
-        break;
-    case BCC1:
-        return processBCC1(byte, curr_frame);
-        break;
-    case DATA:
-        return processData(byte, payload);
-        break;
-    default:
-        state = START;
-        return -1;
-        break;
-    }
-}
-
-int processStart(char byte)
+int processStart(unsigned char byte)
 {
     if (byte == FLAG_VALUE)
     {
@@ -77,7 +54,7 @@ int processStart(char byte)
     return 0;
 }
 
-int processAddress(char byte)
+int processAddress(unsigned char byte)
 {
     if (byte == ADDRESS_SET)
     {
@@ -94,7 +71,7 @@ int processAddress(char byte)
     return 0;
 }
 
-int processControl(char byte, int curr_frame)
+int processControl(unsigned char byte, int curr_frame)
 {
     if (byte == CTRL_I(curr_frame))
     {
@@ -111,15 +88,18 @@ int processControl(char byte, int curr_frame)
     return 0;
 }
 
-int processBCC1(char byte, int curr_frame)
+int processBCC1(unsigned char byte, int curr_frame)
 {
-    if (byte == ADDRESS_SET ^ CTRL_I(curr_frame))
+    if (byte == (ADDRESS_SET ^ CTRL_I(curr_frame)))
     {
         state = DATA;
+    }else{
+        state = START;
     }
+    return 0;
 }
 
-int processData(char byte, char *payload)
+int processData(unsigned char byte,unsigned char *payload)
 {
     if(pos >= MAX_PAYLOAD_SIZE){
         state = START;
@@ -158,4 +138,32 @@ int processData(char byte, char *payload)
         pos++;
     }
     return 0;
+}
+
+
+int processByte(unsigned char byte,unsigned char *payload, int curr_frame)
+{
+
+   switch (state)
+    {
+    case START:
+        return processStart(byte);
+        break;
+    case ADDRESS:
+        return processAddress(byte);
+        break;
+    case CTRL:
+        return processControl(byte, curr_frame);
+        break;
+    case BCC1:
+        return processBCC1(byte, curr_frame);
+        break;
+    case DATA:
+        return processData(byte, payload);
+        break;
+    default:
+        state = START;
+        return -1;
+        break;
+    }
 }

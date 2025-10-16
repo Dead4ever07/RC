@@ -1,15 +1,15 @@
 // Link layer protocol implementation
 
-#include "link_layer.h"
-#include "serial_port.h"
 #include <fcntl.h>
 #include <termios.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <utils.h>
-#include "macros.h"
+#include "link_layer.h"
+#include "serial_port.h"
 #include "alarm.h"
+#include "utils.h"
+#include "macros.h"
 
 // MISC
 #define _POSIX_SOURCE 1 // POSIX compliant source
@@ -17,8 +17,7 @@
 LinkLayer config;
 int timeout;
 
-int alarmEnabled = FALSE;
-int alarmCount = 0;
+
 
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte);
 int sendDiscCommand(unsigned char *discCommand);
@@ -38,8 +37,6 @@ int llopen(LinkLayer connectionParameters)
     }
     // Start alarm signals
     alarmSetup();
-    char setCommand[COMMAND_SIZE] = SET_COMMAND;
-    char UACommand[COMMAND_SIZE] = UA_COMMAND;
     if (connectionParameters.role == LlTx)
     {
         unsigned char setCommand[] = SET_COMMAND;
@@ -75,25 +72,24 @@ int llwrite(const unsigned char *buf, int bufSize)
 
 int llread(unsigned char *packet)
 {
-    int started = FALSE;
     int curr_frame = 0;
     int tries = 0;
     while (TRUE)
     {
         unsigned char byte;
-        int resp = readByteWithAlarm(byte);
+        int resp = readByteWithAlarm(&byte);
         
         if (resp > 0)
         {
             int res = processByte(byte, packet, curr_frame);
             if (res < 0)
             {
-                char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
+                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
                 writeBytesSerialPort(response,COMMAND_SIZE);
             }
             else if (res > 0){
                 curr_frame ^= 1;
-                char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame));
+                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame));
                 writeBytesSerialPort(response, COMMAND_SIZE);
                 return res;
             }

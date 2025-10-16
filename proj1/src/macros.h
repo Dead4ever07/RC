@@ -9,8 +9,6 @@
 #define ADDRESS_SET 0x03
 #define CTRL_UA 0x07
 #define CTRL_SET 0x03
-#define CTRL_RR 0x05
-#define CTRL_REJ 0x01
 #define CTRL_DISC 0x0B
 #define EXCAPE_CHAR 0x7D
 #define MAX_PAYLOAD_SIZE 1000

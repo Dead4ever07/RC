@@ -1,10 +1,15 @@
+#include <signal.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
 #include "alarm.h"
 #include "macros.h"
-#include <signal.h>
 
 
 int alarmEnabled = FALSE;
 int alarmCount = 0;
+
+
 
 void alarmHandler(int signal)
 {
