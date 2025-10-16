@@ -57,7 +57,7 @@ int llopen(LinkLayer connectionParameters)
     {  
         unsigned char setCommand[] = SET_COMMAND;
         unsigned char uaCommand[] = UA_COMMAND;
-        if(sendFrame(setCommand, 4, uaCommand) != 0)
+        if(sendFrame(setCommand, COMMAND_SIZE, uaCommand) != 0)
         {
             return -1;
         }
@@ -137,7 +137,7 @@ int sendDiscCommand(unsigned char *discCommand){
 
     unsigned char uaCommand[] = UA_COMMAND;
 
-    if(sendFrame(discCommand, 4, discCommand) != 0)
+    if(sendFrame(discCommand, COMMAND_SIZE, discCommand) != 0)
     {
         return -1;
     }
