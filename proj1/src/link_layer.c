@@ -86,6 +86,9 @@ int llwrite(const unsigned char *buf, int bufSize)
 
 int llread(unsigned char *packet)
 {
+    int curr_frame = 0;
+    char refBuff[COMMAND_SIZE] =  COMMAND(ADDRESS_UA, CTRL_I(curr_frame));
+    
 
     /*
     llread cookbook:
@@ -187,3 +190,5 @@ int readByteWithAlarm(char *byte)
 
 // Perguntas para o prof, para ler um commando é necessário tentar ler 3 vezes? Ou é só ao enviar
 // Quando lemos um commando é necessário usar um alarm?
+
+

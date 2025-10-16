@@ -13,6 +13,8 @@
 #define CTRL_SET 0x03 // Sent by the transmitter to initiate a connection
 // The control function is dependent on the frame number (0,1)
 #define CTRL_RR(x) 0xAA+x
+
+#define CTRL_I(x) x<<6
 // The REJ command is dependet on the frame being rejected(same as RR)
 #define CTRL_REJ(x) 0x54+x
 // The DISC can be sent both ways, if the DISC was sent by the transmiter, the code being sent would be ADDRESS_UA,
@@ -24,6 +26,8 @@
 //The same thing applies to the SET_COMMAND
 #define SET_COMMAND {FLAG_VALUE, ADDRESS_SET, CTRL_SET, ADDRESS_SET^CTRL_SET}
 // The rr command is using ADDRESS_RR that needs to be set depending on the frame being Recive Ready (0,1) 
+#define COMMAND(x,y)  {FLAG_VALUE, x, y, x^y}
+
 #define RR_COMMAND(x) {FLAG_VALUE, ADDRESS_UA, CTRL_RR(x), ADDRESS_UA^(CTRL_RR(x))}
 
 #define REJ_COMMAND(x) {FLAG_VALUE, ADDRESS_UA, CTRL_REJ(x), ADDRESS_UA^(CTRL_REJ(x))}
