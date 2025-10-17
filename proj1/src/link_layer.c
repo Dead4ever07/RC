@@ -55,6 +55,8 @@ int llopen(LinkLayer connectionParameters)
             return -1;
         }
 
+        printf("responding to the transmiter\n");
+
         if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
             printf("Error sending the UA command through the serial port.\n");
@@ -67,6 +69,53 @@ int llopen(LinkLayer connectionParameters)
 
 int llwrite(const unsigned char *buf, int bufSize)
 {
+    int curr_frame = 0;
+    unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(curr_frame));
+    int pos = 4;
+    char BCC2 = 0;
+    for(int i = 0; i<bufSize; i++){
+        printf("pos = %d\n",pos);
+        BCC2 ^= buf[i];
+        if(buf[i] == FLAG_VALUE || buf[i] == EXCAPE_CHAR){
+            frame[pos] = EXCAPE_CHAR;
+            pos++;
+            frame[pos] = buf[i] ^ 0x20;
+        }else{
+            frame[pos] = buf[i];
+        }
+        pos++;
+    }
+    if(BCC2 == FLAG_VALUE || BCC2 == EXCAPE_CHAR){
+        frame[pos] = EXCAPE_CHAR;
+        pos++;
+        frame[pos] = BCC2 ^ 0x20;
+    }else{
+        frame[pos] = BCC2;
+    }
+    pos++;
+    frame[pos] = FLAG_VALUE;
+
+
+    int tries = 0;
+    while (tries<config.nRetransmissions)
+    {
+        
+        tries++;
+        if(writeBytesSerialPort(frame, pos+1) != pos+1){
+            printf("Error writing the frame to the serial port\n");
+            return -1;
+        }
+        char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame^1));
+        if(readBytesAndCompare(response) == 0){
+            return 0;
+        }
+    }
+    
+
+
+
+
+
     return 0;
 }
 
@@ -85,10 +134,11 @@ int llread(unsigned char *packet)
             if (res < 0)
             {
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
-                writeBytesSerialPort(response, COMMAND_SIZE);
+                int response_size = writeBytesSerialPort(response, COMMAND_SIZE);
             }
             else if (res > 0)
             {
+                printf("The packet was recived in full\n");
                 curr_frame ^= 1;
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame));
                 writeBytesSerialPort(response, COMMAND_SIZE);
@@ -191,6 +241,11 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
     {
         printf("Sending frame try nº%d\n",try);
         try++;
+        printf("[");
+        for(int i = 0; i<nBytes; i++){
+            printf(",%x", bytes[i]);
+        }
+        printf("]\n");
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
         {
             continue;

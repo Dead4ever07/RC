@@ -27,7 +27,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }
         linkLayer.role = LlTx;
-        llopen(linkLayer);
+        if(llopen(linkLayer) != 0) return;
         while (TRUE)
         {
 
@@ -37,7 +37,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("the number of bytes read on the file is 0\n");
                 return;
             }
-            llwrite(buffPayload, nbytes);
+            if(llwrite(buffPayload, nbytes) != 0) return;
         }
         fclose(fptr);
         llclose();
@@ -52,7 +52,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
 
         linkLayer.role = LlRx;
-        llopen(linkLayer);
+        if(llopen(linkLayer) != 0) return;
         int nBytes = 0;
         do
         {

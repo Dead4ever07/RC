@@ -21,7 +21,11 @@ int readBytesAndCompare(unsigned char *bytesRef)
     unsigned char buff[COMMAND_SIZE];
     while (pos < COMMAND_SIZE)
     {
-        if (readByteWithAlarm(&buff[pos]) != 1 || buff[pos] != bytesRef[pos])
+        int res = readByteWithAlarm(buff + pos);
+        if(res != 1) continue;
+        printf("res = %x\n", res);
+        printf("recived = %x, expected = %x\n", buff[pos], bytesRef[pos]);
+        if (buff[pos] != bytesRef[pos])
         {
             printf("Erro while reading bytes, either number of bytes wrong, or wrong response\n");
             return -1;
@@ -38,8 +42,8 @@ int readByteWithAlarm(unsigned char *byte)
         alarm(timeout);
         alarmEnabled = TRUE;
     }
-
     int nbytes = readByteSerialPort(byte);
+    printf("byte = %x\n",*byte);
     alarm(0);
     alarmEnabled = FALSE;
     return nbytes;
@@ -102,6 +106,8 @@ int processBCC1(unsigned char byte, int curr_frame)
 
 int processData(unsigned char byte,unsigned char *payload)
 {
+    printf("byte_data = %x\n",byte);
+    printf("pos_data = %d\n",pos);
     if(pos >= MAX_PAYLOAD_SIZE){
         state = START;
         return 0;
@@ -111,6 +117,7 @@ int processData(unsigned char byte,unsigned char *payload)
         payload[pos] = byte ^ 0x20;
         BCC2 ^= payload[pos];
         pos++;
+        doDestuffing = FALSE;
     }
     else if (EXCAPE_CHAR)
     {
