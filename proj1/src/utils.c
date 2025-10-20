@@ -15,24 +15,24 @@ int BCC2 = 0;
 
 int readBytesAndCompare(unsigned char *bytesRef)
 {
-    printf("Reading bytes and comparing\n");
     int pos = 0;
+    int isWrong = FALSE;
     unsigned char buff[COMMAND_SIZE];
     while (pos < COMMAND_SIZE)
     {
         int res = readByteWithAlarm(buff + pos);
         if (res != 1)
             continue;
-        printf("res = %x\n", res);
-        printf("recived = %x, expected = %x\n", buff[pos], bytesRef[pos]);
         if (buff[pos] != bytesRef[pos])
         {
+            printf("Wrong pos =%d\n",pos);
+            printf("%x != %x\n", buff[pos], bytesRef[pos]);
             printf("Erro while reading bytes, either number of bytes wrong, or wrong response\n");
-            return -1;
+            isWrong = TRUE;
         }
         pos++;
     }
-    return 0;
+    return isWrong;
 }
 
 int readByteWithAlarm(unsigned char *byte)
@@ -107,6 +107,7 @@ int processBCC1(unsigned char byte, int curr_frame)
 int processData(unsigned char byte, unsigned char *payload)
 {
 
+    printf("byte = %x\n", byte);
     if (pos >= MAX_PAYLOAD_SIZE)
     {
         state = START;
@@ -114,6 +115,9 @@ int processData(unsigned char byte, unsigned char *payload)
     }
     if (byte == FLAG_VALUE)
     {
+        
+        //printf("BCC2 = %x\n", payload[pos-1]);
+        //printf("Real BCC2 = %x\n", BCC2);
         if (BCC2 == 0)
         {
             int ret = --pos;
@@ -123,6 +127,7 @@ int processData(unsigned char byte, unsigned char *payload)
         }
         else
         {
+            
             state = START;
             pos = 0;
             return -1;
@@ -135,7 +140,7 @@ int processData(unsigned char byte, unsigned char *payload)
         pos++;
         doDestuffing = FALSE;
     }
-    else if (EXCAPE_CHAR)
+    else if (byte == EXCAPE_CHAR)
     {
         doDestuffing = TRUE;
     }

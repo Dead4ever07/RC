@@ -72,10 +72,11 @@ int llwrite(const unsigned char *buf, int bufSize)
     int curr_frame = 0;
     unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(curr_frame));
     int pos = 4;
-    char BCC2 = 0;
+    unsigned char BCC2 = 0;
     for(int i = 0; i<bufSize; i++){
-        printf("pos = %d\n",pos);
+        
         BCC2 ^= buf[i];
+        printf("buffi = %x\n", buf[i]);
         if(buf[i] == FLAG_VALUE || buf[i] == EXCAPE_CHAR){
             frame[pos] = EXCAPE_CHAR;
             pos++;
@@ -85,6 +86,8 @@ int llwrite(const unsigned char *buf, int bufSize)
         }
         pos++;
     }
+    printf("Buff size = %d\n", bufSize);
+    printf("BCC2 = %x\n",BCC2);
     if(BCC2 == FLAG_VALUE || BCC2 == EXCAPE_CHAR){
         frame[pos] = EXCAPE_CHAR;
         pos++;
@@ -110,11 +113,6 @@ int llwrite(const unsigned char *buf, int bufSize)
             return 0;
         }
     }
-    
-
-
-
-
 
     return 0;
 }
@@ -123,8 +121,9 @@ int llread(unsigned char *packet)
 {
     int curr_frame = 0;
     int tries = 0;
-    while (TRUE)
+    while (tries<=config.nRetransmissions)
     {
+        tries++;
         unsigned char byte;
         int resp = readByteWithAlarm(&byte);
 
@@ -152,7 +151,6 @@ int llread(unsigned char *packet)
         }
         else
         {
-            tries++;
             if (tries == config.nRetransmissions)
             {
                 printf("Couldn't read from the transmitor in %d tentatives\n", tries);
