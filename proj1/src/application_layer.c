@@ -57,7 +57,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         do
         {
             nBytes = llread(buffPayload);
-            fwrite(buffPayload, nBytes, 1, fptr);
+            fwrite(buffPayload, 1, nBytes, fptr);
         } while (nBytes > 0);
         fclose(fptr);
         llclose();

@@ -5,7 +5,6 @@
 #include "alarm.h"
 #include "serial_port.h"
 
-
 extern int alarmEnabled;
 extern int timeout;
 
@@ -22,7 +21,8 @@ int readBytesAndCompare(unsigned char *bytesRef)
     while (pos < COMMAND_SIZE)
     {
         int res = readByteWithAlarm(buff + pos);
-        if(res != 1) continue;
+        if (res != 1)
+            continue;
         printf("res = %x\n", res);
         printf("recived = %x, expected = %x\n", buff[pos], bytesRef[pos]);
         if (buff[pos] != bytesRef[pos])
@@ -43,12 +43,10 @@ int readByteWithAlarm(unsigned char *byte)
         alarmEnabled = TRUE;
     }
     int nbytes = readByteSerialPort(byte);
-    printf("byte = %x\n",*byte);
     alarm(0);
     alarmEnabled = FALSE;
     return nbytes;
 }
-
 
 int processStart(unsigned char byte)
 {
@@ -98,21 +96,39 @@ int processBCC1(unsigned char byte, int curr_frame)
     if (byte == (ADDRESS_SET ^ CTRL_I(curr_frame)))
     {
         state = DATA;
-    }else{
+    }
+    else
+    {
         state = START;
     }
     return 0;
 }
 
-int processData(unsigned char byte,unsigned char *payload)
+int processData(unsigned char byte, unsigned char *payload)
 {
-    printf("byte_data = %x\n",byte);
-    printf("pos_data = %d\n",pos);
-    if(pos >= MAX_PAYLOAD_SIZE){
+
+    if (pos >= MAX_PAYLOAD_SIZE)
+    {
         state = START;
         return 0;
     }
-    if (doDestuffing)
+    if (byte == FLAG_VALUE)
+    {
+        if (BCC2 == 0)
+        {
+            int ret = --pos;
+            pos = 0;
+            state = START;
+            return ret;
+        }
+        else
+        {
+            state = START;
+            pos = 0;
+            return -1;
+        }
+    }
+    else if (doDestuffing)
     {
         payload[pos] = byte ^ 0x20;
         BCC2 ^= payload[pos];
@@ -123,22 +139,6 @@ int processData(unsigned char byte,unsigned char *payload)
     {
         doDestuffing = TRUE;
     }
-    else if (byte == FLAG_VALUE)
-    {
-        if (BCC2 == 0)
-        {
-            int ret = --pos;
-            pos = 0;
-            state = START;
-            return ret; 
-        }
-        else
-        {
-            state = START;
-            pos = 0;
-            return -1;
-        }
-    }
     else
     {
         payload[pos] = byte;
@@ -148,11 +148,10 @@ int processData(unsigned char byte,unsigned char *payload)
     return 0;
 }
 
-
-int processByte(unsigned char byte,unsigned char *payload, int curr_frame)
+int processByte(unsigned char byte, unsigned char *payload, int curr_frame)
 {
 
-   switch (state)
+    switch (state)
     {
     case START:
         return processStart(byte);
