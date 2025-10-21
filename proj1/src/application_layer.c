@@ -45,7 +45,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         fclose(fptr);
         // The aplication layer needs to make the other aplication layer know that it is suposed to disconect, for that we should 
         // send another frame to make it disconect from one another.
-        llclose();
+        //llclose();
     }
     else
     {
@@ -61,11 +61,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         int nBytes = 0;
         do
         {
+            printf("writing to the file n = %d bytes\n",nBytes);
             nBytes = llread(buffPayload);
             fwrite(buffPayload, 1, nBytes, fptr);
         } while (nBytes > 0);
         fclose(fptr);
-        llclose();
+        //llclose();
     }
     return;
 }

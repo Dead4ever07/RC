@@ -123,15 +123,21 @@ int llread(unsigned char *packet)
     int tries = 0;
     while (tries<=config.nRetransmissions)
     {
+        if (tries == config.nRetransmissions)
+        {
+            printf("Couldn't read from the transmitor in %d tentatives\n", tries);
+            return -1;
+        }
         tries++;
         unsigned char byte;
         int resp = readByteWithAlarm(&byte);
-
+        
         if (resp > 0)
         {
             int res = processByte(byte, packet, curr_frame);
             if (res < 0)
             {
+                printf("There is an error while reciving the package\n");
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
                 int response_size = writeBytesSerialPort(response, COMMAND_SIZE);
             }
@@ -147,15 +153,10 @@ int llread(unsigned char *packet)
         else if (resp < 0)
         {
             printf("Couldn't read the byte from the serial port, an error ocurred\n");
-            return -1;
+            continue;
         }
         else
         {
-            if (tries == config.nRetransmissions)
-            {
-                printf("Couldn't read from the transmitor in %d tentatives\n", tries);
-                return -1;
-            }
             continue;
         }
         tries = 0;
