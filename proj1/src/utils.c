@@ -23,16 +23,19 @@ int readBytesAndCompare(unsigned char *bytesRef)
         int res = readByteWithAlarm(buff + pos);
         if (res == 0)
         {
+            //fazer um try
             continue;
         }
         else if (res == -1)
         {
+            //dar o erro certo!
             return -1;
         }
         else
         {
             if (buff[pos] != bytesRef[pos])
             {
+                //perguntar ao professor sobre o lixo!
                 printf("Wrong pos =%d\n", pos);
                 printf("%x != %x\n", buff[pos], bytesRef[pos]);
                 printf("Erro while reading bytes, either number of bytes wrong, or wrong response\n");
@@ -57,11 +60,14 @@ int readByteWithAlarm(unsigned char *byte)
     return nbytes;
 }
 
+//perguntar ao professor se tem uma forma melhor de lidar com o lixo!
 int processStart(unsigned char byte)
 {
     if (byte == FLAG_VALUE)
     {
         state = ADDRESS;
+    }else{
+        printf("Error. The first value read was not a flag value!");
     }
     return 0;
 }
@@ -74,11 +80,14 @@ int processAddress(unsigned char byte)
     }
     else if (byte == FLAG_VALUE)
     {
+        printf("Receive the flag value again when should receive address.\n");
         state = ADDRESS;
     }
     else
     {
+        printf("Didn't receive a valid address value.\n");
         state = START;
+        return -1;
     }
     return 0;
 }
@@ -91,11 +100,14 @@ int processControl(unsigned char byte, int curr_frame)
     }
     else if (byte == FLAG_VALUE)
     {
+        printf("Receive the flag value again when should receive control.\n");
         state = ADDRESS;
     }
     else
     {
+        printf("Receive the wrong control.\n");
         state = START;
+        return -1;
     }
     return 0;
 }
@@ -108,20 +120,23 @@ int processBCC1(unsigned char byte, int curr_frame)
     }
     else
     {
+        printf("Receive the wrong BCC1.\n");
         state = START;
+        return -1;
     }
     return 0;
 }
 
 int processData(unsigned char byte, unsigned char *payload)
 {
-
+    //questão de receber a trama de controlo na data não damos erro e da return -1, rejeita a trama!
+    //ou caso de so receber o bcc2!
     if (byte == FLAG_VALUE)
     {
         
-        printf("Flag recived\n");
+        //printf("Flag recived\n");
         // printf("BCC2 = %x\n", payload[pos-1]);
-        printf("Real BCC2 = %x\n", BCC2);
+        //printf("Real BCC2 = %x\n", BCC2);
         if (BCC2 == 0)
         {
             int ret = --pos;
@@ -131,7 +146,7 @@ int processData(unsigned char byte, unsigned char *payload)
         }
         else
         {
-            
+            printf("The BCC2 was not correct\n");
             state = START;
             pos = 0;
             return -1;
@@ -140,7 +155,8 @@ int processData(unsigned char byte, unsigned char *payload)
     if (pos >= MAX_PAYLOAD_SIZE + 1)
     {
         state = START;
-        return 0;
+        printf("The data size was bigger than the maximum.\n");
+        return -1;
     }
     if (doDestuffing)
     {

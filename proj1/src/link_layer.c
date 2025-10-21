@@ -27,6 +27,7 @@ int llopen(LinkLayer connectionParameters)
 {
     config = connectionParameters;
     timeout = config.timeout;
+
     // Open port
     if (openSerialPort(config.serialPort, config.baudRate) == -1)
     {
@@ -35,27 +36,29 @@ int llopen(LinkLayer connectionParameters)
     }
     // Start alarm signals
     alarmSetup();
+
+    unsigned char setCommand[] = SET_COMMAND;
+    unsigned char uaCommand[] = UA_COMMAND;
+
     if (connectionParameters.role == LlTx)
     {
-        printf("Running as Transmitter\n");
-        unsigned char setCommand[] = SET_COMMAND;
-        unsigned char uaCommand[] = UA_COMMAND;
+        //printf("Running as Transmitter\n");
         if (sendFrame(setCommand, COMMAND_SIZE, uaCommand) != 0)
         {
+            printf("Error sending the set command or receiving the ua.\n");
             return -1;
         }
     }
     else
     {
-        printf("Running as Reciver\n");
-        unsigned char setCommand[] = SET_COMMAND;
-        unsigned char uaCommand[] = UA_COMMAND;
+        //printf("Running as Reciver\n");
         if (readBytesAndCompare(setCommand) != 0)
         {
+            printf("Error receiving the set command.\n");
             return -1;
         }
 
-        printf("responding to the transmiter\n");
+        //printf("responding to the transmiter\n");
 
         if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
@@ -69,8 +72,8 @@ int llopen(LinkLayer connectionParameters)
 
 int llwrite(const unsigned char *buf, int bufSize)
 {
-    int curr_frame = 0;
-    unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(curr_frame));
+    int currFrame = 0;
+    unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(currFrame));
     int pos = 4;
     unsigned char BCC2 = 0;
     for(int i = 0; i<bufSize; i++){
@@ -108,7 +111,7 @@ int llwrite(const unsigned char *buf, int bufSize)
             printf("Error writing the frame to the serial port\n");
             return -1;
         }
-        char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame^1));
+        char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame^1));
         if(readBytesAndCompare(response) == 0){
             return 0;
         }
@@ -119,48 +122,50 @@ int llwrite(const unsigned char *buf, int bufSize)
 
 int llread(unsigned char *packet)
 {
-    int curr_frame = 0;
+    int currFrame = 0;
     int tries = 0;
-    while (tries<=config.nRetransmissions)
+    while (tries<config.nRetransmissions)
     {
-        if (tries == config.nRetransmissions)
-        {
-            printf("Couldn't read from the transmitor in %d tentatives\n", tries);
-            return -1;
-        }
         tries++;
         unsigned char byte;
         int resp = readByteWithAlarm(&byte);
-        
-        if (resp > 0)
+
+        if (resp == 1)
         {
-            int res = processByte(byte, packet, curr_frame);
+            tries=0;
+            int res = processByte(byte, packet, currFrame);
             if (res < 0)
             {
-                printf("There is an error while reciving the package\n");
-                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(curr_frame));
+                printf("There is an error while reciving the package.\n");
+                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(currFrame));
                 int response_size = writeBytesSerialPort(response, COMMAND_SIZE);
+
+                if(response_size != COMMAND_SIZE){
+                    printf("Error sending Reject!\n");
+                }
             }
             else if (res > 0)
             {
                 printf("The packet was recived in full\n");
-                curr_frame ^= 1;
-                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(curr_frame));
-                writeBytesSerialPort(response, COMMAND_SIZE);
+                currFrame ^= 1;
+                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame));
+                int responseSize = writeBytesSerialPort(response, COMMAND_SIZE);
+                if(responseSize != COMMAND_SIZE){
+                    printf("Error sending the RR!\n");
+                }
                 return res;
             }
         }
         else if (resp < 0)
         {
-            printf("Couldn't read the byte from the serial port, an error ocurred\n");
-            continue;
+            printf("Couldn't read the byte with alarm from the serial port, an error ocurred\n");
+        }else{
+            printf("Couldn't read with alarm.\n");
         }
-        else
-        {
-            continue;
-        }
-        tries = 0;
+        
     }
+    printf("Couldn't read from the transmitor in %d tentatives\n", tries);
+    return -1;
 
     /*
     llread cookbook:
@@ -173,7 +178,6 @@ int llread(unsigned char *packet)
     - If every thing right send a package with the RR ctrl else REJ.
     - If the frame is sent again with the same number just discard the last one
 */
-    return 0;
 }
 
 ////////////////////////////////////////////////
@@ -238,17 +242,19 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
     int try = 0;
     while (try < config.nRetransmissions)
     {
-        printf("Sending frame try nº%d\n",try);
         try++;
-        printf("[");
-        for(int i = 0; i<nBytes; i++){
-            printf(",%x", bytes[i]);
-        }
-        printf("]\n");
+        //printf("Sending frame try nº%d\n",try);
+        //printf("[");
+        // for(int i = 0; i<nBytes; i++){
+        //     printf(",%x", bytes[i]);
+        // }
+        // printf("]\n");
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
         {
+            printf("Error writing the frame to the serial port\n");
             continue;
         }
+
         if (readBytesAndCompare(ackByte) == 0)
         {
             return 0;
@@ -256,7 +262,6 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte)
         else
         {
             printf("Error while reading/comparing bytes\n");
-            continue;
         }
     }
     printf("Coudn't send Frame in the nRetransmissions\n");

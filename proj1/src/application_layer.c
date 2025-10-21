@@ -11,6 +11,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 {
     LinkLayer linkLayer;
     linkLayer.baudRate = baudRate;
+    //pq o strcpy?
     strcpy(linkLayer.serialPort, serialPort);
     linkLayer.nRetransmissions = nTries;
     linkLayer.timeout = timeout;
@@ -26,8 +27,14 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("Unable to open/create the file\n");
             return;
         }
+
         linkLayer.role = LlTx;
-        if(llopen(linkLayer) != 0) return;
+        if(llopen(linkLayer) != 0){
+            printf("llopen failed\n");
+            fclose(fptr);
+            return;
+        }
+    
         while (TRUE)
         {
 
@@ -35,16 +42,21 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             if (nbytes == 0)
             {
                 printf("The file ended\n");
-                return;
+                break;
             }
             for(int i = 0; i<nbytes; i++){
                 printf("aplication byte = %x\n", buffPayload[i]);
             }
-            if(llwrite(buffPayload, nbytes) != 0) return;
+            if(llwrite(buffPayload, nbytes) != 0)
+            { 
+                printf("Error sending the llwrite.\n");
+                return;
+            }
         }
         fclose(fptr);
         // The aplication layer needs to make the other aplication layer know that it is suposed to disconect, for that we should 
         // send another frame to make it disconect from one another.
+        //o llclose pode estar mal aplicado!
         //llclose();
     }
     else

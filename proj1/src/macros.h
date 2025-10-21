@@ -23,7 +23,7 @@
 #define CTRL_RR0 0xAA
 #define CTRL_RR1 0xAB
 #define CTRL_RR(x) 0xAA+x
-#define CTRL_I(x) (x?0x40:0x00)
+#define CTRL_I(x) (x?0x80:0x00)
 
 #define CTRL_I0 0X00
 #define CTRL_I1 0x40
