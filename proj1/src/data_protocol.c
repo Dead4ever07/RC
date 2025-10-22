@@ -1,73 +1,57 @@
 #include <stdio.h>
 #include <unistd.h>
-#include "utils.h"
+#include "data_protocol.h"
 #include "macros.h"
-#include "alarm.h"
-#include "serial_port.h"
-
-extern int alarmEnabled;
-extern int timeout;
 
 RX_State state = START;
 int pos = 0;
-int doDestuffing = FALSE;
 int BCC2 = 0;
 
-int readBytesAndCompare(unsigned char *bytesRef)
+int byteStuffing(unsigned char *data, unsigned char byte)
 {
-    int pos = 0;
-    int isWrong = FALSE;
-    unsigned char buff[COMMAND_SIZE];
-    while (pos < COMMAND_SIZE)
+    if (byte == FLAG_VALUE || byte == EXCAPE_CHAR)
     {
-        int res = readByteWithAlarm(buff + pos);
-        if (res == 0)
-        {
-            //fazer um try
-            continue;
-        }
-        else if (res == -1)
-        {
-            //dar o erro certo!
-            return -1;
-        }
-        else
-        {
-            if (buff[pos] != bytesRef[pos])
-            {
-                //perguntar ao professor sobre o lixo!
-                printf("Wrong pos =%d\n", pos);
-                printf("%x != %x\n", buff[pos], bytesRef[pos]);
-                printf("Erro while reading bytes, either number of bytes wrong, or wrong response\n");
-                isWrong = TRUE;
-            }
-            pos++;
-        }
+        *data = EXCAPE_CHAR;
+        *(data + 1) = byte ^ XOR_BYTE;
+
+        return 2;
     }
-    return isWrong;
+    else
+    {
+        *data = byte;
+        return 1;
+    }
 }
 
-int readByteWithAlarm(unsigned char *byte)
+int byteDestuffing(unsigned char *data, unsigned char byte)
 {
-    if (alarmEnabled == FALSE)
+    static int doDestuffing = FALSE;
+    if (byte == EXCAPE_CHAR)
     {
-        alarm(timeout);
-        alarmEnabled = TRUE;
+        doDestuffing = TRUE;
+        return 1;
     }
-    int nbytes = readByteSerialPort(byte);
-    alarm(0);
-    alarmEnabled = FALSE;
-    return nbytes;
+    else if (doDestuffing == TRUE)
+    {
+        *data = byte ^ XOR_BYTE;
+        doDestuffing = FALSE;
+    }
+    else
+    {
+        *data = byte;
+    }
+    return 0;
 }
 
-//perguntar ao professor se tem uma forma melhor de lidar com o lixo!
 int processStart(unsigned char byte)
 {
     if (byte == FLAG_VALUE)
     {
         state = ADDRESS;
-    }else{
-        printf("Error. The first value read was not a flag value!");
+    }
+    else
+    {
+        // printf("Error. The first value read was not a flag value!");
     }
     return 0;
 }
@@ -103,6 +87,12 @@ int processControl(unsigned char byte, int curr_frame)
         printf("Receive the flag value again when should receive control.\n");
         state = ADDRESS;
     }
+    else if (byte == CTRL_I(curr_frame ^ 1))
+    {
+        printf("Recived the control from to the previous flag\n");
+        state = START;
+        return 0;
+    }
     else
     {
         printf("Receive the wrong control.\n");
@@ -129,14 +119,14 @@ int processBCC1(unsigned char byte, int curr_frame)
 
 int processData(unsigned char byte, unsigned char *payload)
 {
-    //questão de receber a trama de controlo na data não damos erro e da return -1, rejeita a trama!
-    //ou caso de so receber o bcc2!
+    // questão de receber a trama de controlo na data não damos erro e da return -1, rejeita a trama!
+    // ou caso de so receber o bcc2!
     if (byte == FLAG_VALUE)
     {
-        
-        //printf("Flag recived\n");
-        // printf("BCC2 = %x\n", payload[pos-1]);
-        //printf("Real BCC2 = %x\n", BCC2);
+
+        // printf("Flag recived\n");
+        //  printf("BCC2 = %x\n", payload[pos-1]);
+        // printf("Real BCC2 = %x\n", BCC2);
         if (BCC2 == 0)
         {
             int ret = --pos;
@@ -155,26 +145,18 @@ int processData(unsigned char byte, unsigned char *payload)
     if (pos >= MAX_PAYLOAD_SIZE + 1)
     {
         state = START;
+        pos = 0;
         printf("The data size was bigger than the maximum.\n");
         return -1;
     }
-    if (doDestuffing)
+    if (byteDestuffing(&payload[pos], byte) != 0)
     {
-        payload[pos] = byte ^ 0x20;
-        BCC2 ^= payload[pos];
-        pos++;
-        doDestuffing = FALSE;
+        return 0;
     }
-    else if (byte == EXCAPE_CHAR)
-    {
-        doDestuffing = TRUE;
-    }
-    else
-    {
-        payload[pos] = byte;
-        BCC2 ^= payload[pos];
-        pos++;
-    }
+    BCC2 ^= payload[pos];
+    pos++;
+
+    // printf("byte = %x, pos = %d", byte, pos);
     return 0;
 }
 

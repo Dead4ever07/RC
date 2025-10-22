@@ -38,5 +38,11 @@ int readBytesAndCompare(unsigned char *bytesRef);
 int readByteWithAlarm(unsigned char *byte);
 
 
+/// @brief 
+/// @param data 
+/// @param byte 
+/// @return number of bytes added to the data array 
+int  byteStuffing(unsigned char* data, unsigned char byte);
+
 
 #endif

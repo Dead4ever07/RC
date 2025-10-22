@@ -17,7 +17,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     linkLayer.timeout = timeout;
     FILE *fptr;
 
-    unsigned char buffPayload[MAX_PAYLOAD_SIZE];
+    unsigned char buffPayload[MAX_PAYLOAD_SIZE*2];
 
     if (role[0] == 't')
     {
@@ -43,9 +43,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             {
                 printf("The file ended\n");
                 break;
-            }
-            for(int i = 0; i<nbytes; i++){
-                printf("aplication byte = %x\n", buffPayload[i]);
             }
             if(llwrite(buffPayload, nbytes) != 0)
             { 
@@ -73,8 +70,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         int nBytes = 0;
         do
         {
-            printf("writing to the file n = %d bytes\n",nBytes);
             nBytes = llread(buffPayload);
+            printf("writing to the file n = %d bytes\n",nBytes);
+            if(nBytes<0) return;
             fwrite(buffPayload, 1, nBytes, fptr);
         } while (nBytes > 0);
         fclose(fptr);
