@@ -89,9 +89,9 @@ int processControl(unsigned char byte, int curr_frame)
     }
     else if (byte == CTRL_I(curr_frame ^ 1))
     {
-        printf("Recived the control from to the previous flag\n");
+        printf("Recived the control from the previous flag\n");
         state = START;
-        return -1;
+        return 0;
     }
     else
     {

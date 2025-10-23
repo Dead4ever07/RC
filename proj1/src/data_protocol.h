@@ -27,19 +27,6 @@ typedef enum{
 /// 
 int processByte(unsigned char byte, unsigned char* payload,int curr_packet);
 
-
-/// @brief Responsible to read a response and compare with the expected
-/// @param bytesRef expected bytes on successfull response 
-/// @return returns 0 if successfull
-int readBytesAndCompare(unsigned char *bytesRef);
-
-
-/// @brief Responsible to read a response without blocking, using an alarm
-/// @param byte Responsible to read a response without 
-/// @return the number of bytes read or -1 in case of error
-int readByteWithAlarm(unsigned char *byte);
-
-
 /// @brief 
 /// @param data 
 /// @param byte 

@@ -43,7 +43,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 printf("The file ended\n");
                 break;
             }
-            if(llwrite(buffPayload, nbytes) != 0)
+            if(llwrite(buffPayload, nbytes) < 0)
             { 
                 printf("Error sending the llwrite.\n");
                 return;
