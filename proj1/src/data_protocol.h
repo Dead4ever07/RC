@@ -21,6 +21,8 @@ typedef enum{
 ///
 /// -1 the frame was recived but there was an error, sould send a REJ 
 ///
+/// -2 the frame recived is repeated, send a RR 
+///
 /// Positive, the number of bytes stored in the packet
 /// 
 int processByte(unsigned char byte, unsigned char* payload,int curr_packet);

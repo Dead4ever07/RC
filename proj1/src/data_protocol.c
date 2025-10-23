@@ -91,7 +91,7 @@ int processControl(unsigned char byte, int curr_frame)
     {
         printf("Recived the control from to the previous flag\n");
         state = START;
-        return 0;
+        return -1;
     }
     else
     {
@@ -138,6 +138,7 @@ int processData(unsigned char byte, unsigned char *payload)
         {
             printf("The BCC2 was not correct\n");
             state = START;
+            BCC2 = 0;
             pos = 0;
             return -1;
         }

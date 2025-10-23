@@ -1,6 +1,5 @@
 #include "serial_communications.h"
 
-
 extern int alarmEnabled;
 extern int timeout;
 

@@ -1,7 +1,10 @@
 #ifndef __SERIAL_COMM__
 #define __SERIAL_COMM__
-#include "alarm.h"
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>  
 #include "macros.h"
+#include "alarm.h"
 #include "serial_port.h"
 
 

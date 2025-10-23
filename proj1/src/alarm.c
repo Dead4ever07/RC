@@ -1,9 +1,5 @@
-#include <signal.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
-#include "alarm.h"
 #include "macros.h"
+#include "alarm.h"
 
 
 int alarmEnabled = FALSE;

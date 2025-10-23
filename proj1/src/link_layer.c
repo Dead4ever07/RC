@@ -89,7 +89,7 @@ int llwrite(const unsigned char *buf, int bufSize)
             printf("Error writing the frame to the serial port\n");
             return -1;
         }
-        char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
+        unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
         if(readBytesAndCompare(response) == 0){
             currFrame ^=1;
             return 0;
