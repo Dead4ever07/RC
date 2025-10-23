@@ -38,6 +38,18 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
     return -1;
 }
 
+int readByteWithAlarm(unsigned char *byte)
+{
+    if (alarmEnabled == FALSE)
+    {
+        alarm(timeout);
+        alarmEnabled = TRUE;
+    }
+    int nbytes = readByteSerialPort(byte);
+    alarm(0);
+    alarmEnabled = FALSE;
+    return nbytes;
+}
 
 int readBytesAndCompare(unsigned char *bytesRef)
 {
@@ -73,15 +85,3 @@ int readBytesAndCompare(unsigned char *bytesRef)
     return isWrong;
 }
 
-int readByteWithAlarm(unsigned char *byte)
-{
-    if (alarmEnabled == FALSE)
-    {
-        alarm(timeout);
-        alarmEnabled = TRUE;
-    }
-    int nbytes = readByteSerialPort(byte);
-    alarm(0);
-    alarmEnabled = FALSE;
-    return nbytes;
-}

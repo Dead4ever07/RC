@@ -11,7 +11,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 {
     LinkLayer linkLayer;
     linkLayer.baudRate = baudRate;
-    //pq o strcpy?
     strcpy(linkLayer.serialPort, serialPort);
     linkLayer.nRetransmissions = nTries;
     linkLayer.timeout = timeout;
@@ -19,7 +18,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     unsigned char buffPayload[MAX_PAYLOAD_SIZE*2];
 
-    if (role[0] == 't')
+    if (role[0] == 't' && role[1] == 'x')
     {
         fptr = fopen(filename, "r");
         if (fptr == NULL)
@@ -56,7 +55,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         //o llclose pode estar mal aplicado!
         //llclose();
     }
-    else
+    else if (role[0] == 'r' && role[1] == 'x')
     {
         fptr = fopen(filename, "w+");
         if (fptr == NULL)
@@ -77,6 +76,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         } while (nBytes > 0);
         fclose(fptr);
         //llclose();
+    } 
+    else
+    {
+        printf("Invalid role.\n");
     }
     return;
 }

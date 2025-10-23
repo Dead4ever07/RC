@@ -50,6 +50,7 @@ int llopen(LinkLayer connectionParameters)
     }
     else
     {
+        //COLOCAR AS TRIES!!!!!!
         //printf("Running as Reciver\n");
         if (readBytesAndCompare(setCommand) != 0)
         {
@@ -82,7 +83,7 @@ int llwrite(const unsigned char *buf, int bufSize)
     int tries = 0;
     while (tries<config.nRetransmissions)
     {
-        
+
         tries++;
         printf("sending %d bytes\n", pos+1);
         if(writeBytesSerialPort(frame, pos+1) != pos+1){
@@ -149,50 +150,49 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose()
 {
-    if (config.role == LlRx)
+    unsigned char discCommand[] = COMMAND(ADDRESS_SET,CTRL_DISC);
+    unsigned char uaCommand[] = COMMAND(ADDRESS_SET,CTRL_UA);
+    if (config.role == LlTx)
     {
-        unsigned char discCommand[] = SENDER_DISC_COMMAND;
-
-        if (sendDiscCommand(discCommand) != 0)
+        if (sendFrame(discCommand, COMMAND_SIZE, discCommand, config.nRetransmissions) != 0)
         {
+            printf("Error sending the DISC command and/or receiving the DISC.\n");
+            return -1;
+        }
+        //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
+        if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
+        {
+            printf("Error sending the UA command through the serial port.\n");
+            return 1;
+        }
+
+        if (closeSerialPort() != 0)
+        {
+            printf("Error closing the Serial port\n");
             return -1;
         }
     }
     else
     {
-        unsigned char discCommand[] = RECEIVER_DISC_COMMAND;
-
-        if (sendDiscCommand(discCommand) != 0)
+        //ver a questão dos erros!
+        if (readBytesAndCompare(discCommand) != 0)
         {
+            printf("Error receiving the disc command.\n");
+            return -1;
+        }
+        if (sendFrame(discCommand, COMMAND_SIZE, uaCommand, config.nRetransmissions) != 0)
+        {
+            printf("Error sending the DISC command and/or receiving the UA.\n");
+            return -1;
+        }
+        
+        if (closeSerialPort() != 0)
+        {
+            printf("Error closing the Serial port\n");
             return -1;
         }
     }
     return 0;
 }
 
-/// @brief Responsible to the sending the disc command and the ua response
-/// @param discCommand it depends on the role
-/// @return 0 if nothing went wrong
-int sendDiscCommand(unsigned char *discCommand)
-{
-
-    unsigned char uaCommand[] = UA_COMMAND;
-
-    if (sendFrame(discCommand, COMMAND_SIZE, discCommand, config.nRetransmissions) != 0)
-    {
-        return -1;
-    }
-    if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
-    {
-        printf("Error sending the UA command through the serial port.\n");
-        return 1;
-    }
-
-    if (closeSerialPort() != 0)
-    {
-        printf("Error closing the Serial port\n");
-        return -1;
-    }
-    return 0;
-}
 
