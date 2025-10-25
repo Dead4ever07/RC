@@ -85,7 +85,9 @@ int llwrite(const unsigned char *buf, int bufSize)
 
         tries++;
         pos++;
+        printf("tries = %d\n", tries);
         printf("sending %d bytes\n", pos);
+        printf("CURRFRAME = %d\n",currFrame);
         if(writeBytesSerialPort(frame, pos) != pos){
             printf("Error writing the frame to the serial port\n");
             return -1;

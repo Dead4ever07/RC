@@ -71,20 +71,21 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
             {
                 wrong = TRUE;
             }
-            if (!wrong){
-                return 0;   
-            }
         }
-        if(bytesRef2 == NULL)continue;
+        if (!wrong){
+            return 0;   
+        }
+        wrong = FALSE;
+        if(bytesRef2 == NULL) continue;
         for (int i = 0; i < COMMAND_SIZE; i++)
         {
             if (buff[i] != bytesRef2[i])
             {
                 wrong = TRUE;
             }
-            if (!wrong){
-                return 1;   
-            }
+        }
+        if (!wrong){
+            return 1;   
         }
     }
     return -1;
