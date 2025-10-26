@@ -157,5 +157,3 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     return;
 }
 
-
-//DAR HANDLE AOS CASOS DE ERRO GARVE PARA DEPOIS FECAHAR A PORTA E POINTER, TER BASTANTE ATENÇÃO A ISSO!

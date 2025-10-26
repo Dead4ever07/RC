@@ -89,9 +89,9 @@ int processControl(unsigned char byte, int curr_frame)
     }
     else if (byte == CTRL_I(curr_frame ^ 1))
     {
-        printf("Recived the control from to the previous flag\n");
+        printf("currframe = %d\n", curr_frame);
+        printf("Recived the control from the previous frame\n");
         state = START;
-        return -1;
     }
     else
     {
@@ -112,7 +112,7 @@ int processBCC1(unsigned char byte, int curr_frame)
     {
         printf("Receive the wrong BCC1.\n");
         state = START;
-        return -1;
+
     }
     return 0;
 }

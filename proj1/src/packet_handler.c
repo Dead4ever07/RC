@@ -50,7 +50,7 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
         return -1;
     }
 
-    // --- FILE_SIZE ---
+    // --- FILE SIZE ---
     if (buf[pos++] != FILE_SIZE_T) {
         printf("Error: expected the file size field\n");
         return -1;
@@ -67,7 +67,7 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
         *fileSize = (*fileSize << 8) | buf[pos++];
     }
 
-    // --- FILE_NAME ---
+    // --- FILE NAME ---
     if (buf[pos++] != FILE_NAME_T) {
         printf("Error: expected the file name field\n");
         return -1;

@@ -38,7 +38,6 @@ int llopen(LinkLayer connectionParameters)
 
     unsigned char setCommand[] = SET_COMMAND;
     unsigned char uaCommand[] = UA_COMMAND;
-
     if (connectionParameters.role == LlTx)
     {
         //printf("Running as Transmitter\n");
@@ -52,7 +51,7 @@ int llopen(LinkLayer connectionParameters)
     {
         //COLOCAR AS TRIES!!!!!!
         //printf("Running as Reciver\n");
-        if (readBytesAndCompare(setCommand) != 0)
+        if (readBytesAndCompare(setCommand,NULL) != 0)
         {
             printf("Error receiving the set command.\n");
             return -1;
@@ -85,32 +84,44 @@ int llwrite(const unsigned char *buf, int bufSize)
     {
 
         tries++;
-        printf("sending %d bytes\n", pos+1);
-        if(writeBytesSerialPort(frame, pos+1) != pos+1){
+        pos++;
+        printf("tries = %d\n", tries);
+        printf("sending %d bytes\n", pos);
+        printf("CURRFRAME = %d\n",currFrame);
+        if(writeBytesSerialPort(frame, pos) != pos){
             printf("Error writing the frame to the serial port\n");
             return -1;
         }
-        unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
-        if(readBytesAndCompare(response) == 0){
+        unsigned char response1[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
+        unsigned char response2[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ((currFrame)));
+        switch (readBytesAndCompare(response1, response2))
+        {
+        case 0:
+            // The frame was sent with success
             currFrame ^=1;
-            return 0;
+            return pos;
+            break;
+        case 1:
+            // The frame was rejected
+            perror("The frame was rejected\n");
+            break;    
+        default:
+            perror("The response was an invalid frame\n");
+            break;
         }
     }
-    printf("TX:Number of tries excided\n");
+    perror("TX:Number of tries excided\n");
     return -1;
 }
 
 int llread(unsigned char *packet)
 {
-    int tries = 0;
-    while (tries<config.nRetransmissions)
+    while (TRUE)
     {
-        tries++;
         unsigned char byte;
         int resp = readByteWithAlarm(&byte);
         if (resp == 1)
         {
-            tries=0;
             int res = processByte(byte, packet, currFrame);
             if (res < 0)
             {
@@ -140,8 +151,7 @@ int llread(unsigned char *packet)
         }
         
     }
-    printf("Couldn't read from the transmitor in %d tentatives\n", tries);
-    return -1;
+        return -1;
 
 }
 
@@ -175,7 +185,7 @@ int llclose()
     else
     {
         //ver a questão dos erros!
-        if (readBytesAndCompare(discCommand) != 0)
+        if (readBytesAndCompare(discCommand,NULL) != 0)
         {
             printf("Error receiving the disc command.\n");
             return -1;
