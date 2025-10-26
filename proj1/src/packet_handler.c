@@ -37,7 +37,11 @@ int writeControlPacket(unsigned char control, unsigned long fileSize, const char
         return -1;
     }
 
-    return llwrite(buf, totalSize);
+    if(llwrite(buf, totalSize) < 0){
+        printf("Error sending all the control packet.\n");
+        return -1;
+    }
+    return 0;
 }
 
 

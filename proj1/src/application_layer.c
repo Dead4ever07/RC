@@ -60,7 +60,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             buffPayload[1] = nBytes / 256;
             buffPayload[2] = nBytes % 256;
             
-            if(llwrite(buffPayload, nBytes + DATA_HEADER_SIZE) != 0)
+            if(llwrite(buffPayload, nBytes + DATA_HEADER_SIZE) < 0)
             { 
                 printf("Error sending the llwrite.\n");
                 return;
@@ -84,7 +84,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         
         fclose(fptr);
-        //llclose();
+        llclose();
     }
     else if (role[0] == 'r' && role[1] == 'x')
     {
@@ -148,7 +148,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         
         fclose(fptr);
-        //llclose();
+        llclose();
     } 
     else
     {

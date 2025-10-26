@@ -36,8 +36,8 @@ int llopen(LinkLayer connectionParameters)
     // Start alarm signals
     alarmSetup();
 
-    unsigned char setCommand[] = SET_COMMAND;
-    unsigned char uaCommand[] = UA_COMMAND;
+    unsigned char setCommand[] = COMMAND(ADDRESS_SET,CTRL_SET);
+    unsigned char uaCommand[] = COMMAND(ADDRESS_SET,CTRL_UA);
     if (connectionParameters.role == LlTx)
     {
         //printf("Running as Transmitter\n");
@@ -49,8 +49,6 @@ int llopen(LinkLayer connectionParameters)
     }
     else
     {
-        //COLOCAR AS TRIES!!!!!!
-        //printf("Running as Reciver\n");
         if (readBytesAndCompare(setCommand,NULL) != 0)
         {
             printf("Error receiving the set command.\n");
@@ -160,20 +158,22 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 int llclose()
 {
-    unsigned char discCommand[] = COMMAND(ADDRESS_SET,CTRL_DISC);
-    unsigned char uaCommand[] = COMMAND(ADDRESS_SET,CTRL_UA);
+    //mudar as macros!!
+    unsigned char discCommandTx[] = COMMAND(ADDRESS_SET,CTRL_DISC);
+    unsigned char discCommandRx[] = COMMAND(ADDRESS_RECEIVER_DISC,CTRL_DISC);
+    unsigned char uaCommandTx[] = COMMAND(ADDRESS_RECEIVER_DISC,CTRL_UA);
     if (config.role == LlTx)
     {
-        if (sendFrame(discCommand, COMMAND_SIZE, discCommand, config.nRetransmissions) != 0)
+        if (sendFrame(discCommandTx, COMMAND_SIZE, discCommandRx, config.nRetransmissions) != 0)
         {
-            printf("Error sending the DISC command and/or receiving the DISC.\n");
+            printf("Error sending DISC and/or receiving the DISC.\n");
             return -1;
         }
         //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
-        if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
+        if (writeBytesSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
         {
             printf("Error sending the UA command through the serial port.\n");
-            return 1;
+            return -1;
         }
 
         if (closeSerialPort() != 0)
@@ -184,13 +184,12 @@ int llclose()
     }
     else
     {
-        //ver a questão dos erros!
-        if (readBytesAndCompare(discCommand,NULL) != 0)
+        if (readBytesAndCompare(discCommandTx,NULL) != 0)
         {
             printf("Error receiving the disc command.\n");
             return -1;
         }
-        if (sendFrame(discCommand, COMMAND_SIZE, uaCommand, config.nRetransmissions) != 0)
+        if (sendFrame(discCommandRx, COMMAND_SIZE, uaCommandTx, config.nRetransmissions) != 0)
         {
             printf("Error sending the DISC command and/or receiving the UA.\n");
             return -1;
