@@ -12,7 +12,10 @@
 #define CTRL_DISC 0x0B
 #define EXCAPE_CHAR 0x7D
 #define XOR_BYTE 0x20
-#define MAX_PAYLOAD_SIZE 1000
+
+#define MAX_PAYLOAD_SIZE 1003
+#define MAX_DATA_FIELD 1000
+#define DATA_HEADER_SIZE 3
 
 
 #define COMMAND_SIZE 5
@@ -29,5 +32,14 @@
 
 #define FALSE 0
 #define TRUE 1
+
+
+#define FILE_SIZE_T 0
+#define FILE_NAME_T 1
+#define MAX_FILENAME_SIZE 200
+#define CONTROL_HEADER_SIZE 9
+#define START_CONTROL 1
+#define DATA_CONTROL 2
+#define END_CONTROL 3
 
 #endif
