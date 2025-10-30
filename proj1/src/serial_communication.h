@@ -7,6 +7,7 @@
 #include "macros.h"
 #include "alarm.h"
 #include "serial_port.h"
+#include "statistics.h"
 
 typedef enum{
     START_READ,
@@ -36,6 +37,15 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5]);
 /// @return -1 on erro otherwise the number of bytes read.
 int readByteWithAlarm(unsigned char *byte);
 
+// Write up to numBytes from the "bytes" array to the serial port.
+// Must check how many were actually written in the return value.
+// Returns -1 on error, otherwise the number of bytes written.
+
+/// @brief Write up to n bytes from the "byte" array to the serial port.
+/// @param byte array of bytes to read from
+/// @param n number of bytes to sent
+/// @return The number of bytes actually sent
+int writeBytesToSerialPort(unsigned char *byte, int n);
 
 
 

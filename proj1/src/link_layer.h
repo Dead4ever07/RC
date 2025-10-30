@@ -9,9 +9,10 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "link_layer.h"
 #include "serial_port.h"
+#include "alarm.h"
 #include "data_protocol.h"
+#include "statistics.h"
 #include "serial_communication.h"
 
 

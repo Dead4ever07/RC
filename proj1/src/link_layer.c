@@ -1,13 +1,4 @@
-#include <fcntl.h>
-#include <termios.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "link_layer.h"
-#include "serial_port.h"
-#include "alarm.h"
-#include "data_protocol.h"
-#include "serial_communication.h"
 
 
 #define _POSIX_SOURCE 1 
@@ -16,7 +7,6 @@ LinkLayer config;
 int timeout;
 int currFrame = 0;
     
-int sendDiscCommand(unsigned char *discCommand);
 
 ////////////////////////////////////////////////
 // LLOPEN
@@ -25,8 +15,8 @@ int llopen(LinkLayer connectionParameters)
 {
     config = connectionParameters;
     timeout = config.timeout;
+    startStatistics();
 
-    // Open port
     if (openSerialPort(config.serialPort, config.baudRate) == -1)
     {
         perror("Error opening the Serial Port.");
@@ -52,7 +42,7 @@ int llopen(LinkLayer connectionParameters)
             perror("Error receiving the set command.\n");
             return -1;
         }
-        if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
+        if (writeBytesToSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
             perror("Error sending the UA command through the serial port.\n");
             return -1;
@@ -64,6 +54,7 @@ int llopen(LinkLayer connectionParameters)
 
 int llwrite(const unsigned char *buf, int bufSize)
 {
+    startPacketTrack();
     unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(currFrame));
     int pos = 4;
     unsigned char BCC2 = 0;
@@ -80,7 +71,7 @@ int llwrite(const unsigned char *buf, int bufSize)
 
         tries++;
         pos++;
-        if(writeBytesSerialPort(frame, pos) != pos){
+        if(writeBytesToSerialPort(frame, pos) != pos){
             perror("Error writing the frame to the serial port\n");
             return -1;
         }
@@ -90,9 +81,11 @@ int llwrite(const unsigned char *buf, int bufSize)
         {
         case 0:
             currFrame ^=1;
+            endPacketTrack();
             return pos;
             break;
         case 1:
+            rejectIncrement();
             perror("The frame was rejected\n");
             break;    
         default:
@@ -101,11 +94,13 @@ int llwrite(const unsigned char *buf, int bufSize)
         }
     }
     perror("TX:Number of tries excided\n");
+    endPacketTrack();
     return -1;
 }
 
 int llread(unsigned char *packet)
 {
+    startPacketTrack();
     while (TRUE)
     {
         unsigned char byte;
@@ -117,7 +112,9 @@ int llread(unsigned char *packet)
             {
                 perror("There was an error while reciving the package.\n");
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(currFrame));
-                int response_size = writeBytesSerialPort(response, COMMAND_SIZE);
+                rejectIncrement();
+                framesRecivedIncrement();
+                int response_size = writeBytesToSerialPort(response, COMMAND_SIZE);
                 if(response_size != COMMAND_SIZE){
                     perror("Error sending Reject Frame!\n");
                 }
@@ -125,11 +122,13 @@ int llread(unsigned char *packet)
             else if (res > 0)
             {
                 currFrame ^= 1;
+                framesRecivedIncrement();
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame));
-                int responseSize = writeBytesSerialPort(response, COMMAND_SIZE);
+                int responseSize = writeBytesToSerialPort(response, COMMAND_SIZE);
                 if(responseSize != COMMAND_SIZE){
                     perror("Error sending the RR!\n");
                 }
+                endPacketTrack();
                 return res;
             }
         }
@@ -141,7 +140,8 @@ int llread(unsigned char *packet)
         }
         
     }
-        return -1;
+    endPacketTrack();
+    return -1;
 
 }
 
@@ -162,7 +162,7 @@ int llclose()
             return -1;
         }
         //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
-        if (writeBytesSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
+        if (writeBytesToSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
         {
             perror("Error sending the UA command through the serial port.\n");
             return -1;
@@ -193,6 +193,7 @@ int llclose()
             return -1;
         }
     }
+    endStatistics();
     return 0;
 }
 

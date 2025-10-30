@@ -31,7 +31,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             return;
         }
         long fileSize = st.st_size;
-        
+
         linkLayer.role = LlTx;
         if(llopen(linkLayer) != 0)
         {
@@ -48,7 +48,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         int nBytes = fread(buffPayload + DATA_HEADER_SIZE, 1, MAX_DATA_FIELD, fptr);
         while (nBytes > 0)
         {
-
             buffPayload[0] = DATA_CONTROL;
             buffPayload[1] = nBytes / 256;
             buffPayload[2] = nBytes % 256;
@@ -58,7 +57,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 perror("Error sending the llwrite.\n");
                 return;
             }
-
             nBytes = fread(buffPayload + DATA_HEADER_SIZE, 1, MAX_DATA_FIELD, fptr);
         }
         if(nBytes == 0)
@@ -86,7 +84,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             perror("Unable to open/create the file\n");
             return;
         }
-
+        
         linkLayer.role = LlRx;
         if(llopen(linkLayer) != 0){ 
             return;
@@ -101,8 +99,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             perror("Error receiving the START package.\n");
             return;
         }
-        
         //mudar ligeiramente a estrutura para um while norma e verificar o controlo!
+        // Não é preciso verificar se o sumatorio dos bytes recebidos foi igual ao filesize?
+        // Isso fazia que não tentasses ler um frame que não existe.
+
         nBytes = llread(buffPayload);
         while(nBytes > 0 && buffPayload[0] == DATA_CONTROL)
         {

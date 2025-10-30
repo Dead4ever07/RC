@@ -6,6 +6,9 @@
         "serial_port.h": "c",
         "data_protocol.h": "c",
         "packet_handler.h": "c",
-        "macros.h": "c"
+        "macros.h": "c",
+        "application_layer.h": "c",
+        "statistics.h": "c",
+        "serial_communication.h": "c"
     }
 }

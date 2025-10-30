@@ -17,7 +17,7 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
     while (try < nRetransmissions)
     {
         try++;
-        if (writeBytesSerialPort(bytes, nBytes) != nBytes)
+        if (writeBytesToSerialPort(bytes, nBytes) != nBytes)
         {
             perror("Error writing the frame to the serial port\n");
             continue;
@@ -67,6 +67,7 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
             }
         }
         if (!wrong){
+            framesRecivedIncrement();
             return 0;   
         }
         wrong = FALSE;
@@ -79,6 +80,7 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
             }
         }
         if (!wrong){
+            framesRecivedIncrement();
             return 1;   
         }
     }
@@ -169,4 +171,10 @@ int byteReadStateMachine(unsigned char *frame)
         }
     }
     return 0;
+}
+
+
+int writeBytesToSerialPort(unsigned char *byte, int n){
+    framesSentIncrement();
+    return writeBytesSerialPort(byte,n);
 }

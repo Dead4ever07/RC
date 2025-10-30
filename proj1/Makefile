@@ -3,7 +3,7 @@
 
 # Parameters
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
 
 BIN = bin/
 CABLE = cable/
@@ -25,11 +25,11 @@ main: $(SRC)/*.c
 
 .PHONY: run_tx
 run_tx: main
-	./$(BIN)/main $(TX_SERIAL_PORT) $(BAUD_RATE) tx $(TX_FILE)
+	./$(BIN)/main $(TX_SERIAL_PORT) $(BAUD_RATE) tx $(TX_FILE) 
 
 .PHONY: run_rx
 run_rx: main
-	./$(BIN)/main $(RX_SERIAL_PORT) $(BAUD_RATE) rx $(RX_FILE)
+	./$(BIN)/main $(RX_SERIAL_PORT) $(BAUD_RATE) rx $(RX_FILE) 
 
 .PHONY: check_files
 check_files:

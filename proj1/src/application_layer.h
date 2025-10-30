@@ -10,6 +10,7 @@
 #include "link_layer.h"
 #include "packet_handler.h"
 
+
 // Application layer main function.
 // Arguments:
 //   serialPort: Serial port name (e.g., /dev/ttyS0).
