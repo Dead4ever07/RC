@@ -7,8 +7,7 @@
 #include "serial_port.h"
 #include "alarm.h"
 #include "data_protocol.h"
-#include "macros.h"
-#include "serial_communications.h"
+#include "serial_communication.h"
 
 
 #define _POSIX_SOURCE 1 
@@ -40,10 +39,9 @@ int llopen(LinkLayer connectionParameters)
     unsigned char uaCommand[] = COMMAND(ADDRESS_SET,CTRL_UA);
     if (connectionParameters.role == LlTx)
     {
-        //printf("Running as Transmitter\n");
         if (sendFrame(setCommand, COMMAND_SIZE, uaCommand, config.nRetransmissions) != 0)
         {
-            printf("Error sending the set command or receiving the ua.\n");
+            perror("Error sending the set command or receiving the ua.\n");
             return -1;
         }
     }
@@ -51,13 +49,12 @@ int llopen(LinkLayer connectionParameters)
     {
         if (readBytesAndCompare(setCommand,NULL) != 0)
         {
-            printf("Error receiving the set command.\n");
+            perror("Error receiving the set command.\n");
             return -1;
         }
-        //printf("responding to the transmiter\n");
         if (writeBytesSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
-            printf("Error sending the UA command through the serial port.\n");
+            perror("Error sending the UA command through the serial port.\n");
             return -1;
         }
     }
@@ -83,11 +80,8 @@ int llwrite(const unsigned char *buf, int bufSize)
 
         tries++;
         pos++;
-        printf("tries = %d\n", tries);
-        printf("sending %d bytes\n", pos);
-        printf("CURRFRAME = %d\n",currFrame);
         if(writeBytesSerialPort(frame, pos) != pos){
-            printf("Error writing the frame to the serial port\n");
+            perror("Error writing the frame to the serial port\n");
             return -1;
         }
         unsigned char response1[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
@@ -95,12 +89,10 @@ int llwrite(const unsigned char *buf, int bufSize)
         switch (readBytesAndCompare(response1, response2))
         {
         case 0:
-            // The frame was sent with success
             currFrame ^=1;
             return pos;
             break;
         case 1:
-            // The frame was rejected
             perror("The frame was rejected\n");
             break;    
         default:
@@ -123,11 +115,11 @@ int llread(unsigned char *packet)
             int res = processByte(byte, packet, currFrame);
             if (res < 0)
             {
-                printf("There was an error while reciving the package.\n");
+                perror("There was an error while reciving the package.\n");
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(currFrame));
                 int response_size = writeBytesSerialPort(response, COMMAND_SIZE);
                 if(response_size != COMMAND_SIZE){
-                    printf("Error sending Reject!\n");
+                    perror("Error sending Reject Frame!\n");
                 }
             }
             else if (res > 0)
@@ -136,16 +128,16 @@ int llread(unsigned char *packet)
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame));
                 int responseSize = writeBytesSerialPort(response, COMMAND_SIZE);
                 if(responseSize != COMMAND_SIZE){
-                    printf("Error sending the RR!\n");
+                    perror("Error sending the RR!\n");
                 }
                 return res;
             }
         }
         else if (resp < 0)
         {
-            printf("Couldn't read the byte with alarm from the serial port, an error ocurred\n");
+            perror("Couldn't read the byte with alarm from the serial port, an error ocurred\n");
         }else{
-            printf("Couldn't read with alarm.\n");
+            perror("Couldn't read with alarm.\n");
         }
         
     }
@@ -166,19 +158,19 @@ int llclose()
     {
         if (sendFrame(discCommandTx, COMMAND_SIZE, discCommandRx, config.nRetransmissions) != 0)
         {
-            printf("Error sending DISC and/or receiving the DISC.\n");
+            perror("Error sending DISC and/or receiving the DISC.\n");
             return -1;
         }
         //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
         if (writeBytesSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
         {
-            printf("Error sending the UA command through the serial port.\n");
+            perror("Error sending the UA command through the serial port.\n");
             return -1;
         }
 
         if (closeSerialPort() != 0)
         {
-            printf("Error closing the Serial port\n");
+            perror("Error closing the Serial port\n");
             return -1;
         }
     }
@@ -186,18 +178,18 @@ int llclose()
     {
         if (readBytesAndCompare(discCommandTx,NULL) != 0)
         {
-            printf("Error receiving the disc command.\n");
+            perror("Error receiving the disc command.\n");
             return -1;
         }
         if (sendFrame(discCommandRx, COMMAND_SIZE, uaCommandTx, config.nRetransmissions) != 0)
         {
-            printf("Error sending the DISC command and/or receiving the UA.\n");
+            perror("Error sending the DISC command and/or receiving the UA.\n");
             return -1;
         }
         
         if (closeSerialPort() != 0)
         {
-            printf("Error closing the Serial port\n");
+            perror("Error closing the Serial port\n");
             return -1;
         }
     }

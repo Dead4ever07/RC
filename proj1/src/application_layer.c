@@ -1,13 +1,6 @@
 // Application layer protocol implementation
-
 #include "application_layer.h"
-#include "link_layer.h"
-#include "packet_handler.h"
-#include <stdio.h>
-#include <sys/stat.h>
-#include <string.h>
-#include "macros.h"
-#include "packet_handler.h"
+
 
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
@@ -27,28 +20,28 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         fptr = fopen(filename, "r");
         if (fptr == NULL)
         {
-            printf("Unable to open/create the file\n");
+            perror("Unable to open/create the file\n");
             return;
         }
         
         struct stat st;
         if (stat(filename, &st) == -1)
         {
-            printf("Unable to see the file size\n");
+            perror("Unable to see the file size\n");
             return;
         }
         long fileSize = st.st_size;
-
+        
         linkLayer.role = LlTx;
         if(llopen(linkLayer) != 0)
         {
-            printf("llopen failed\n");
+            perror("llopen failed\n");
             fclose(fptr);
             return;
         }
         if(writeControlPacket(START_CONTROL,fileSize,filename) != 0)
         {
-            printf("Error sending the START package.\n");
+            perror("Error sending the START package.\n");
             return;
         }
 
@@ -62,7 +55,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             
             if(llwrite(buffPayload, nBytes + DATA_HEADER_SIZE) < 0)
             { 
-                printf("Error sending the llwrite.\n");
+                perror("Error sending the llwrite.\n");
                 return;
             }
 
@@ -70,16 +63,15 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         }
         if(nBytes == 0)
         {
-            printf("The file ended\n.");
             if (writeControlPacket(END_CONTROL,fileSize,filename) != 0){
-                printf("There was an error sending the END packet.\n");
+                perror("There was an error sending the END packet.\n");
                 return;
             }
 
         }
         else 
         {
-            printf("Error reading the file\n.");
+            perror("Error reading the file\n.");
             return;
         }
         
@@ -91,7 +83,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         fptr = fopen(filename, "w+");
         if (fptr == NULL)
         {
-            printf("Unable to open/create the file\n");
+            perror("Unable to open/create the file\n");
             return;
         }
 
@@ -106,7 +98,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         char filenameReceived[MAX_FILENAME_SIZE + 1]; 
 
         if(readControlPacket(START_CONTROL,buffPayload,&fileSize, filenameReceived) != 0){
-            printf("Error receiving the START package.\n");
+            perror("Error receiving the START package.\n");
             return;
         }
         
@@ -119,10 +111,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             int size = l2*256 + l1;
 
             if(size + DATA_HEADER_SIZE != nBytes){
-                printf("Error the number of data read(%d) is different from the data send(%d).\n", nBytes, size+DATA_HEADER_SIZE);
+                perror("Error the number of data read is different from the data send.\n");
                 return;
             }
-            printf("writing to the file n = %d bytes\n",size);
 
             fwrite(buffPayload + DATA_HEADER_SIZE, 1, size, fptr);
             nBytes = llread(buffPayload);
@@ -133,17 +124,17 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             char filenameReceivedEnd[MAX_FILENAME_SIZE + 1]; 
 
             if (readControlPacket(END_CONTROL,buffPayload,&fileSizeEnd,filenameReceivedEnd) != 0){
-                printf("There was an error receiving the END packet.\n");
+                perror("There was an error receiving the END packet.\n");
                 return;
             }
             if (fileSizeEnd != fileSize || strcmp(filenameReceived,filenameReceivedEnd) != 0){
-                printf("The information in the start and the END packet were different.\n");
+                perror("The information in the start and the END packet were different.\n");
                 return;
             }
         }
         else 
         {
-            printf("Error reading the file\n.");
+            perror("Error reading the file\n.");
             return;
         }
         
@@ -152,7 +143,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     } 
     else
     {
-        printf("Invalid role.\n");
+        perror("Invalid role.\n");
     }
     return;
 }

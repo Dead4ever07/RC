@@ -1,4 +1,4 @@
-#include "serial_communications.h"
+#include "serial_communication.h"
 
 extern int alarmEnabled;
 extern int timeout;
@@ -17,15 +17,9 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
     while (try < nRetransmissions)
     {
         try++;
-        // printf("Sending frame try nº%d\n",try);
-        // printf("[");
-        //  for(int i = 0; i<nBytes; i++){
-        //      printf(",%x", bytes[i]);
-        //  }
-        //  printf("]\n");
         if (writeBytesSerialPort(bytes, nBytes) != nBytes)
         {
-            printf("Error writing the frame to the serial port\n");
+            perror("Error writing the frame to the serial port\n");
             continue;
         }
         if (readBytesAndCompare(ackByte, NULL) == 0)
@@ -34,10 +28,10 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
         }
         else
         {
-            printf("Error while reading/comparing bytes\n");
+            perror("Error while reading/comparing bytes\n");
         }
     }
-    printf("Coudn't send Frame in the nRetransmissions\n");
+    perror("Coudn't send Frame in the nRetransmissions\n");
     return -1;
 }
 

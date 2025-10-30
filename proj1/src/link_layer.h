@@ -4,6 +4,15 @@
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
 
+#include <fcntl.h>
+#include <termios.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "link_layer.h"
+#include "serial_port.h"
+#include "data_protocol.h"
+#include "serial_communication.h"
 
 
 typedef enum

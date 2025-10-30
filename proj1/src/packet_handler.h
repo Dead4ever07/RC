@@ -2,7 +2,6 @@
 #define _PACKET_H_
 
 #include <stdio.h>
-#include "macros.h"
 #include <string.h>
 #include "link_layer.h"
 

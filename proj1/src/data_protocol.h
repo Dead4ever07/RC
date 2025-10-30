@@ -1,6 +1,11 @@
 #ifndef _UTILS_H_
 #define _UTILS_H_
 
+#include <stdio.h>
+#include <unistd.h>
+#include "data_protocol.h"
+#include "macros.h"
+
 
 typedef enum{
     START,

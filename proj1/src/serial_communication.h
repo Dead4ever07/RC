@@ -1,5 +1,6 @@
 #ifndef __SERIAL_COMM__
 #define __SERIAL_COMM__
+
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>  

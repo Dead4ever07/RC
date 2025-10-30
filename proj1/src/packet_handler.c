@@ -3,9 +3,8 @@
 int writeControlPacket(unsigned char control, unsigned long fileSize, const char *filename) {
     
     unsigned char nameSize = strlen(filename);
-
     if (nameSize > MAX_FILENAME_SIZE) {
-        printf("Error. The name of the file is too big (max %d chars)\n", MAX_FILENAME_SIZE);
+        perror("Error. The name of the file is too big (max 200 chars)\n");
         return -1;
     }
 
@@ -33,12 +32,12 @@ int writeControlPacket(unsigned char control, unsigned long fileSize, const char
     pos += nameSize;
 
     if (pos != totalSize) {
-        printf("Internal error: incorrect size calculation (%d != %d)\n", pos, totalSize);
+        perror("Internal error: incorrect size calculation \n");
         return -1;
     }
 
     if(llwrite(buf, totalSize) < 0){
-        printf("Error sending all the control packet.\n");
+        perror("Error sending all the control packet.\n");
         return -1;
     }
     return 0;
@@ -50,19 +49,19 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
     int pos = 0;
 
     if(buf[pos++] != control){
-        printf("Error in the control value.\n");
+        perror("Error in the control value.\n");
         return -1;
     }
 
     // --- FILE SIZE ---
     if (buf[pos++] != FILE_SIZE_T) {
-        printf("Error: expected the file size field\n");
+        perror("Error: expected the file size field\n");
         return -1;
     }
 
     unsigned char sizeFieldLen = buf[pos++];
     if (sizeFieldLen != 4) {
-        printf("Error: invalid file size length (%d)\n", sizeFieldLen);
+        perror("Error: invalid file size length (max 4GB)\n");
         return -1;
     }
 
@@ -73,13 +72,13 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
 
     // --- FILE NAME ---
     if (buf[pos++] != FILE_NAME_T) {
-        printf("Error: expected the file name field\n");
+        perror("Error: expected the file name field\n");
         return -1;
     }
 
     unsigned char nameSize = buf[pos++];
     if (nameSize > MAX_FILENAME_SIZE) {
-        printf("Error: received file name too long (%d > %d)\n", nameSize, MAX_FILENAME_SIZE);
+        perror("Error: received file name too long (max 200 chars)\n");
         return -1;
     }
 

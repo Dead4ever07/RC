@@ -49,10 +49,6 @@ int processStart(unsigned char byte)
     {
         state = ADDRESS;
     }
-    else
-    {
-        // printf("Error. The first value read was not a flag value!");
-    }
     return 0;
 }
 
@@ -64,12 +60,12 @@ int processAddress(unsigned char byte)
     }
     else if (byte == FLAG_VALUE)
     {
-        printf("Receive the flag value again when should receive address.\n");
+        perror("Receive the flag value again when should receive address.\n");
         state = ADDRESS;
     }
     else
     {
-        printf("Didn't receive a valid address value.\n");
+        perror("Didn't receive a valid address value.\n");
         state = START;
         return -1;
     }
@@ -84,18 +80,17 @@ int processControl(unsigned char byte, int curr_frame)
     }
     else if (byte == FLAG_VALUE)
     {
-        printf("Receive the flag value again when should receive control.\n");
+        perror("Receive the flag value again when should receive control.\n");
         state = ADDRESS;
     }
     else if (byte == CTRL_I(curr_frame ^ 1))
     {
-        printf("currframe = %d\n", curr_frame);
-        printf("Recived the control from the previous frame\n");
+        perror("Recived the control from the previous frame\n");
         state = START;
     }
     else
     {
-        printf("Receive the wrong control.\n");
+        perror("Receive the wrong control.\n");
         state = START;
         return -1;
     }
@@ -110,7 +105,7 @@ int processBCC1(unsigned char byte, int curr_frame)
     }
     else
     {
-        printf("Receive the wrong BCC1.\n");
+        perror("Receive the wrong BCC1.\n");
         state = START;
 
     }
@@ -123,10 +118,6 @@ int processData(unsigned char byte, unsigned char *payload)
     // ou caso de so receber o bcc2!
     if (byte == FLAG_VALUE)
     {
-
-        // printf("Flag recived\n");
-        //  printf("BCC2 = %x\n", payload[pos-1]);
-        // printf("Real BCC2 = %x\n", BCC2);
         if (BCC2 == 0)
         {
             int ret = --pos;
@@ -136,7 +127,7 @@ int processData(unsigned char byte, unsigned char *payload)
         }
         else
         {
-            printf("The BCC2 was not correct\n");
+            perror("The BCC2 was not correct\n");
             state = START;
             BCC2 = 0;
             pos = 0;
@@ -147,7 +138,7 @@ int processData(unsigned char byte, unsigned char *payload)
     {
         state = START;
         pos = 0;
-        printf("The data size was bigger than the maximum.\n");
+        perror("The data size was bigger than the maximum.\n");
         return -1;
     }
     if (byteDestuffing(&payload[pos], byte) != 0)
@@ -156,8 +147,6 @@ int processData(unsigned char byte, unsigned char *payload)
     }
     BCC2 ^= payload[pos];
     pos++;
-
-    // printf("byte = %x, pos = %d", byte, pos);
     return 0;
 }
 
