@@ -1,10 +1,10 @@
 #ifndef __STATISTICS__
 #define __STATISTICS__
 
-#include <time.h>
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #define COL_WIDTH 8
 
 typedef struct
@@ -14,10 +14,11 @@ typedef struct
     int framesRecivedCounter;
     int rejectCounter;
     int timeoutCounter;
-    clock_t startTime;
+    struct timeval startTime;
+    struct timeval startPacket;
+    unsigned long time_taken;
     int sizeOfArray;
-    clock_t endTime;
-    clock_t* timeOfPackets;
+    unsigned long *timeOfPackets;
 
 } Statistics;
 

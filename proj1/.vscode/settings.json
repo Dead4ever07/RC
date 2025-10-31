@@ -9,6 +9,7 @@
         "macros.h": "c",
         "application_layer.h": "c",
         "statistics.h": "c",
-        "serial_communication.h": "c"
+        "serial_communication.h": "c",
+        "time.h": "c"
     }
 }
