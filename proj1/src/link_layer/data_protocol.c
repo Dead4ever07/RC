@@ -84,6 +84,7 @@ int processControl(unsigned char byte, int curr_frame)
     {
         printError(__func__, "Recived the control from the previous frame\n");
         state = START;
+        return -2;
     }
     else
     {
