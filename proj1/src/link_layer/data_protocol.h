@@ -25,7 +25,7 @@ typedef enum{
 ///  
 /// 0 the byte was processed successfully.
 ///
-/// -1 the frame was recived but there was an error, sould send a REJ 
+/// -1 the frame was recived but there was an error, should send a REJ 
 ///
 /// -2 the frame recived is repeated, send a RR 
 ///

@@ -5,7 +5,6 @@ extern int timeout;
 
 int byteReadStateMachine(unsigned char *frame);
 
-
 /// @brief Responsible to send a package in N tries
 /// @param bytes The frame to be sent
 /// @param nBytes The number of bytes in the frame
@@ -48,11 +47,14 @@ int readByteWithAlarm(unsigned char *byte)
     return nbytes;
 }
 
-
 int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
 {
     unsigned char buff[COMMAND_SIZE];
     int wrong = FALSE;
+    if(bytesRef1 == NULL){
+        printError(__func__, "The expected response was NULL.\n");
+        return -1;
+    } 
     while (TRUE)
     {
         if (byteReadStateMachine(buff) != 0)
@@ -66,12 +68,15 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
                 wrong = TRUE;
             }
         }
-        if (!wrong){
+        if (!wrong)
+        {
             framesRecivedIncrement();
-            return 0;   
+            return 0;
         }
         wrong = FALSE;
-        if(bytesRef2 == NULL) continue;
+        if (bytesRef2 == NULL){
+            continue;
+        }
         for (int i = 0; i < COMMAND_SIZE; i++)
         {
             if (buff[i] != bytesRef2[i])
@@ -79,9 +84,10 @@ int readBytesAndCompare(unsigned char bytesRef1[5], unsigned char bytesRef2[5])
                 wrong = TRUE;
             }
         }
-        if (!wrong){
+        if (!wrong)
+        {
             framesRecivedIncrement();
-            return 1;   
+            return 1;
         }
     }
     return -1;
@@ -99,82 +105,80 @@ int byteReadStateMachine(unsigned char *frame)
             printError(__func__, "Couldn't read from the serial port\n");
             return -1;
         }
-        else
+
+        switch (state_reader)
         {
-            switch (state_reader)
+        case START_READ:
+            if (frame[pos] == FLAG_VALUE)
             {
-            case START_READ:
-                if (frame[pos] == FLAG_VALUE)
+                state_reader = ADDRESS_READ;
+                pos = 1;
+            }
+            break;
+        case ADDRESS_READ:
+            if (frame[pos] == FLAG_VALUE)
+            {
+                state_reader = ADDRESS_READ;
+                pos = 1;
+            }
+            else
+            {
+                state_reader = CONTROL_READ;
+                pos = 2;
+            }
+            break;
+        case CONTROL_READ:
+            if (frame[pos] == FLAG_VALUE)
+            {
+                state_reader = ADDRESS_READ;
+                pos = 1;
+            }
+            else
+            {
+                state_reader = BCC1_READ;
+                pos = 3;
+            }
+            break;
+        case BCC1_READ:
+            if (frame[pos] == FLAG_VALUE)
+            {
+                state_reader = ADDRESS_READ;
+                pos = 1;
+            }
+            else
+            {
+                if (frame[pos] == (frame[pos - 1] ^ frame[pos - 2]))
                 {
-                    state_reader = ADDRESS_READ;
-                    pos = 1;
-                }
-                break;
-            case ADDRESS_READ:
-                if (frame[pos] == FLAG_VALUE)
-                {
-                    state_reader = ADDRESS_READ;
-                    pos = 1;
-                }
-                else
-                {
-                    state_reader = CONTROL_READ;
-                    pos = 2;
-                }
-                break;
-            case CONTROL_READ:
-                if (frame[pos] == FLAG_VALUE)
-                {
-                    state_reader = ADDRESS_READ;
-                    pos = 1;
-                }
-                else
-                {
-                    state_reader = BCC1_READ;
-                    pos = 3;
-                }
-                break;
-            case BCC1_READ:
-                if (frame[pos] == FLAG_VALUE)
-                {
-                    state_reader = ADDRESS_READ;
-                    pos = 1;
-                }
-                else
-                {
-                    if (frame[pos] == (frame[pos - 1] ^ frame[pos - 2]))
-                    {
-                        state_reader = FLAGE_READ;
-                        pos = 4;
-                    }
-                    else
-                    {
-                        state_reader = START_READ;
-                        pos = 0;
-                    }
-                }
-                break;
-            case FLAGE_READ:
-                if (frame[pos] == FLAG_VALUE)
-                {
-                    state_reader = END_READ;
+                    state_reader = FLAG_END_READ;
+                    pos = 4;
                 }
                 else
                 {
                     state_reader = START_READ;
                     pos = 0;
                 }
-                break;
-            default:
-                break;
             }
+            break;
+        case FLAG_END_READ:
+            if (frame[pos] == FLAG_VALUE)
+            {
+                state_reader = END_READ;
+            }
+            else
+            {
+                state_reader = START_READ;
+                pos = 0;
+            }
+            break;
+        default:
+            break;
         }
     }
     return 0;
 }
 
-
-int writeBytesToSerialPort(unsigned char *byte, int n){
+int writeBytesToSerialPort(unsigned char *byte, int n)
+{
     framesSentIncrement();
-    return writeBytesSerialPort(byte,n);
+    return writeBytesSerialPort(byte, n);
 }

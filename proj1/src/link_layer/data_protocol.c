@@ -111,8 +111,6 @@ int processBCC1(unsigned char byte, int curr_frame)
 
 int processData(unsigned char byte, unsigned char *payload)
 {
-    // questão de receber a trama de controlo na data não damos erro e da return -1, rejeita a trama!
-    // ou caso de so receber o bcc2!
     if (byte == FLAG_VALUE)
     {
         if (BCC2 == 0)

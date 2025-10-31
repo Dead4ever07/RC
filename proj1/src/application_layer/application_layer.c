@@ -42,6 +42,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if(writeControlPacket(START_CONTROL,fileSize,filename) != 0)
         {
             printError(__func__, "Error sending the START package.\n");
+            fclose(fptr);
+            llclose();
             return;
         }
 
@@ -55,6 +57,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             if(llwrite(buffPayload, nBytes + DATA_HEADER_SIZE) < 0)
             { 
                 printError(__func__, "Error sending the llwrite.\n");
+                fclose(fptr);
                 return;
             }
             nBytes = fread(buffPayload + DATA_HEADER_SIZE, 1, MAX_DATA_FIELD, fptr);
@@ -63,6 +66,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         {
             if (writeControlPacket(END_CONTROL,fileSize,filename) != 0){
                 printError(__func__, "There was an error sending the END packet.\n");
+                fclose(fptr);
                 return;
             }
 
@@ -70,6 +74,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         else 
         {
             printError(__func__, "Error reading the file\n.");
+            fclose(fptr);
             return;
         }
         
@@ -82,14 +87,17 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         if (fptr == NULL)
         {
             printError(__func__, "Unable to open/create the file\n");
+            fclose(fptr);
             return;
         }
         
         linkLayer.role = LlRx;
         if(llopen(linkLayer) != 0){ 
+            fclose(fptr);
             return;
         }
 
+        int bytesRead = 0;
         int nBytes = 0;
         nBytes = llread(buffPayload);
         unsigned long fileSize = 0;
@@ -97,11 +105,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
         if(readControlPacket(START_CONTROL,buffPayload,&fileSize, filenameReceived) != 0){
             printError(__func__, "Error receiving the START package.\n");
+            fclose(fptr);
             return;
         }
-        //mudar ligeiramente a estrutura para um while norma e verificar o controlo!
-        // Não é preciso verificar se o sumatorio dos bytes recebidos foi igual ao filesize?
-        // Isso fazia que não tentasses ler um frame que não existe.
 
         nBytes = llread(buffPayload);
         while(nBytes > 0 && buffPayload[0] == DATA_CONTROL)
@@ -112,8 +118,10 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             if(size + DATA_HEADER_SIZE != nBytes){
                 printError(__func__, "Error the number of data read is different from the data send.\n");
+                fclose(fptr);
                 return;
             }
+            bytesRead += size;
 
             fwrite(buffPayload + DATA_HEADER_SIZE, 1, size, fptr);
             nBytes = llread(buffPayload);
@@ -125,16 +133,27 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
             if (readControlPacket(END_CONTROL,buffPayload,&fileSizeEnd,filenameReceivedEnd) != 0){
                 printError(__func__, "There was an error receiving the END packet.\n");
+                fclose(fptr);
+                llclose();
                 return;
             }
             if (fileSizeEnd != fileSize || strcmp(filenameReceived,filenameReceivedEnd) != 0){
                 printError(__func__, "The information in the start and the END packet were different.\n");
+                fclose(fptr);
+                llclose();
+                return;
+            }
+            if(bytesRead != fileSizeEnd){
+                printError(__func__, "We didn't read all the bytes in the file.\n");
+                fclose(fptr);
+                llclose();
                 return;
             }
         }
         else 
         {
             printError(__func__, "Error reading the file\n.");
+            fclose(fptr);
             return;
         }
         

@@ -19,7 +19,7 @@ int llopen(LinkLayer connectionParameters)
         printError(__func__, "Error opening the Serial Port.");
         return -1;
     }
-    // Start alarm signals
+
     alarmSetup();
 
     unsigned char setCommand[] = COMMAND(ADDRESS_SET,CTRL_SET);
@@ -144,7 +144,6 @@ int llread(unsigned char *packet)
 
 int llclose()
 {
-    //mudar as macros!!
     unsigned char discCommandTx[] = COMMAND(ADDRESS_SET,CTRL_DISC);
     unsigned char discCommandRx[] = COMMAND(ADDRESS_RECEIVER_DISC,CTRL_DISC);
     unsigned char uaCommandTx[] = COMMAND(ADDRESS_RECEIVER_DISC,CTRL_UA);
@@ -155,7 +154,7 @@ int llclose()
             printError(__func__, "Error sending DISC and/or receiving the DISC.\n");
             return -1;
         }
-        //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
+        
         if (writeBytesToSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
         {
             printError(__func__, "Error sending the UA command through the serial port.\n");
