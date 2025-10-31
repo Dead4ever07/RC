@@ -3,11 +3,12 @@
 
 # Parameters
 CC = gcc
-CFLAGS = -Wall
+CFLAGS = -Wall -D_FILE_OFFSET_BITS=64
 
 BIN = bin/
 CABLE = cable/
-SRC = src/
+SRC_DIRS = src/ src/application_layer/ src/link_layer/
+SRCS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
 
 TX_SERIAL_PORT = /dev/ttyS10
 RX_SERIAL_PORT = /dev/ttyS11
@@ -20,16 +21,16 @@ RX_FILE = penguin-received.gif
 .PHONY: all
 all: main cable
 
-main: $(SRC)/*.c
+main: $(SRCS)
 	$(CC) $(CFLAGS) -o $(BIN)/$@ $^
 
 .PHONY: run_tx
 run_tx: main
-	./$(BIN)/main $(TX_SERIAL_PORT) $(BAUD_RATE) tx $(TX_FILE)
+	./$(BIN)/main $(TX_SERIAL_PORT) $(BAUD_RATE) tx $(TX_FILE) 
 
 .PHONY: run_rx
 run_rx: main
-	./$(BIN)/main $(RX_SERIAL_PORT) $(BAUD_RATE) rx $(RX_FILE)
+	./$(BIN)/main $(RX_SERIAL_PORT) $(BAUD_RATE) rx $(RX_FILE) 
 
 .PHONY: check_files
 check_files:

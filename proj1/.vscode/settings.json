@@ -1,5 +1,15 @@
 {
     "files.associations": {
-        "link_layer.h": "c"
+        "link_layer.h": "c",
+        "alarm.h": "c",
+        "serial_communications.h": "c",
+        "serial_port.h": "c",
+        "data_protocol.h": "c",
+        "packet_handler.h": "c",
+        "macros.h": "c",
+        "application_layer.h": "c",
+        "statistics.h": "c",
+        "serial_communication.h": "c",
+        "time.h": "c"
     }
 }

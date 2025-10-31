@@ -4,6 +4,19 @@
 #ifndef _LINK_LAYER_H_
 #define _LINK_LAYER_H_
 
+#include <fcntl.h>
+#include <termios.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "../serial_port.h"
+#include "../debug.h"
+#include "alarm.h"
+#include "data_protocol.h"
+#include "statistics.h"
+#include "serial_communication.h"
+
+
 typedef enum
 {
     LlTx,
@@ -21,11 +34,9 @@ typedef struct
 
 // Size of maximum acceptable payload.
 // Maximum number of bytes that application layer should send to link layer.
-#define MAX_PAYLOAD_SIZE 1000
 
 // MISC
-#define FALSE 0
-#define TRUE 1
+
 
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return 0 on success or -1 on error.
