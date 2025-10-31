@@ -52,7 +52,7 @@ int llopen(LinkLayer connectionParameters)
 int llwrite(const unsigned char *buf, int bufSize)
 {
     startPacketTrack();
-    unsigned char frame[MAX_PAYLOAD_SIZE*2+7] = COMMAND(ADDRESS_SET, CTRL_I(currFrame));
+    unsigned char frame[MAX_PAYLOAD_SIZE*2+COMMAND_SIZE+2] = COMMAND(ADDRESS_SET, CTRL_I(currFrame));
     int pos = 4;
     unsigned char BCC2 = 0;
     for(int i = 0; i<bufSize; i++){
@@ -61,13 +61,13 @@ int llwrite(const unsigned char *buf, int bufSize)
         pos += byteStuffing(&frame[pos], buf[i]);
     }
     pos += byteStuffing(&frame[pos], BCC2);
-    frame[pos] = FLAG_VALUE;
+    frame[pos++] = FLAG_VALUE;
+
     int tries = 0;
-    while (tries<config.nRetransmissions)
+    while (tries<=config.nRetransmissions)
     {
 
         tries++;
-        pos++;
         if(writeBytesToSerialPort(frame, pos) != pos){
             printError(__func__, "Error writing the frame to the serial port\n");
             return -1;
@@ -105,7 +105,7 @@ int llread(unsigned char *packet)
         if (resp == 1)
         {
             int res = processByte(byte, packet, currFrame);
-            if (res < 0)
+            if (res == -1)
             {
                 printError(__func__, "There was an error while reciving the package.\n");
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(currFrame));
@@ -115,6 +115,15 @@ int llread(unsigned char *packet)
                 if(response_size != COMMAND_SIZE){
                     printError(__func__, "Error sending Reject Frame!\n");
                 }
+            }else if(res == -2){
+                printError(__func__, "There was an error while reciving the package.\n");
+                unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame));
+                framesRecivedIncrement();
+                int response_size = writeBytesToSerialPort(response, COMMAND_SIZE);
+                if(response_size != COMMAND_SIZE){
+                    printError(__func__, "Error sending Reject Frame!\n");
+                }
+
             }
             else if (res > 0)
             {

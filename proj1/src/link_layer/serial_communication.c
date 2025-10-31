@@ -13,7 +13,7 @@ int byteReadStateMachine(unsigned char *frame);
 int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRetransmissions)
 {
     int try = 0;
-    while (try < nRetransmissions)
+    while (try <= nRetransmissions)
     {
         try++;
         if (writeBytesToSerialPort(bytes, nBytes) != nBytes)
