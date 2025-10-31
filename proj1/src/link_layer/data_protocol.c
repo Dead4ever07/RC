@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
 #include "data_protocol.h"
-#include "macros.h"
 
 RX_State state = START;
 int pos = 0;

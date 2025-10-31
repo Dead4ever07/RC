@@ -4,9 +4,9 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>  
-#include "macros.h"
+#include "../macros.h"
+#include "../serial_port.h"
 #include "alarm.h"
-#include "serial_port.h"
 #include "statistics.h"
 
 typedef enum{

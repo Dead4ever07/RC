@@ -1,4 +1,5 @@
 #include "statistics.h"
+
 Statistics stat;
 
 void startStatistics()
@@ -110,9 +111,9 @@ void printTable()
 
     for (int i = 0; i < stat.sentPackets; i++)
     {
-        for (int j = 0; j < COL_WIDTH; j++)
+        for (int j = 0; j <= COL_WIDTH; j++)
         {
-            if (j == COL_WIDTH - 1 && i < stat.sentPackets - 1)
+            if (j == COL_WIDTH && i < stat.sentPackets - 1)
                 printf("+");
             else
                 printf("-");
