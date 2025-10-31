@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <string.h>
 #include "../link_layer/link_layer.h"
+#include "../debug.h"
 #include "packet_handler.h"
 
 

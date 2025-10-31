@@ -1,4 +1,3 @@
-#include "../macros.h"
 #include "alarm.h"
 
 
@@ -10,7 +9,7 @@ void alarmHandler(int signal)
 {
     alarmEnabled = FALSE;
     timeOutIncrement();
-    perror("Alarm received\n");
+    printError(__func__, "Alarm received\n");
 }
 
 
@@ -20,7 +19,7 @@ void alarmSetup()
     act.sa_handler = &alarmHandler;
     if (sigaction(SIGALRM, &act, NULL) == -1)
     {
-        perror("sigaction");
+        printError(__func__, "sigaction");
         exit(1);
     }
 }

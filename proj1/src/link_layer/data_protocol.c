@@ -57,12 +57,12 @@ int processAddress(unsigned char byte)
     }
     else if (byte == FLAG_VALUE)
     {
-        perror("Receive the flag value again when should receive address.\n");
+        printError(__func__, "Receive the flag value again when should receive address.\n");
         state = ADDRESS;
     }
     else
     {
-        perror("Didn't receive a valid address value.\n");
+        printError(__func__, "Didn't receive a valid address value.\n");
         state = START;
         return -1;
     }
@@ -77,17 +77,17 @@ int processControl(unsigned char byte, int curr_frame)
     }
     else if (byte == FLAG_VALUE)
     {
-        perror("Receive the flag value again when should receive control.\n");
+        printError(__func__, "Receive the flag value again when should receive control.\n");
         state = ADDRESS;
     }
     else if (byte == CTRL_I(curr_frame ^ 1))
     {
-        perror("Recived the control from the previous frame\n");
+        printError(__func__, "Recived the control from the previous frame\n");
         state = START;
     }
     else
     {
-        perror("Receive the wrong control.\n");
+        printError(__func__, "Receive the wrong control.\n");
         state = START;
         return -1;
     }
@@ -102,7 +102,7 @@ int processBCC1(unsigned char byte, int curr_frame)
     }
     else
     {
-        perror("Receive the wrong BCC1.\n");
+        printError(__func__, "Receive the wrong BCC1.\n");
         state = START;
 
     }
@@ -124,7 +124,7 @@ int processData(unsigned char byte, unsigned char *payload)
         }
         else
         {
-            perror("The BCC2 was not correct\n");
+            printError(__func__, "The BCC2 was not correct\n");
             state = START;
             BCC2 = 0;
             pos = 0;
@@ -135,7 +135,7 @@ int processData(unsigned char byte, unsigned char *payload)
     {
         state = START;
         pos = 0;
-        perror("The data size was bigger than the maximum.\n");
+        printError(__func__, "The data size was bigger than the maximum.\n");
         return -1;
     }
     if (byteDestuffing(&payload[pos], byte) != 0)

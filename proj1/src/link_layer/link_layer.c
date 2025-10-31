@@ -8,9 +8,6 @@ int timeout;
 int currFrame = 0;
     
 
-////////////////////////////////////////////////
-// LLOPEN
-////////////////////////////////////////////////
 int llopen(LinkLayer connectionParameters)
 {
     config = connectionParameters;
@@ -19,7 +16,7 @@ int llopen(LinkLayer connectionParameters)
 
     if (openSerialPort(config.serialPort, config.baudRate) == -1)
     {
-        perror("Error opening the Serial Port.");
+        printError(__func__, "Error opening the Serial Port.");
         return -1;
     }
     // Start alarm signals
@@ -31,7 +28,7 @@ int llopen(LinkLayer connectionParameters)
     {
         if (sendFrame(setCommand, COMMAND_SIZE, uaCommand, config.nRetransmissions) != 0)
         {
-            perror("Error sending the set command or receiving the ua.\n");
+            printError(__func__, "Error sending the set command or receiving the ua.\n");
             return -1;
         }
     }
@@ -39,12 +36,12 @@ int llopen(LinkLayer connectionParameters)
     {
         if (readBytesAndCompare(setCommand,NULL) != 0)
         {
-            perror("Error receiving the set command.\n");
+            printError(__func__, "Error receiving the set command.\n");
             return -1;
         }
         if (writeBytesToSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
-            perror("Error sending the UA command through the serial port.\n");
+            printError(__func__, "Error sending the UA command through the serial port.\n");
             return -1;
         }
     }
@@ -72,7 +69,7 @@ int llwrite(const unsigned char *buf, int bufSize)
         tries++;
         pos++;
         if(writeBytesToSerialPort(frame, pos) != pos){
-            perror("Error writing the frame to the serial port\n");
+            printError(__func__, "Error writing the frame to the serial port\n");
             return -1;
         }
         unsigned char response1[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR((currFrame^1)));
@@ -86,14 +83,14 @@ int llwrite(const unsigned char *buf, int bufSize)
             break;
         case 1:
             rejectIncrement();
-            perror("The frame was rejected\n");
+            printError(__func__, "The frame was rejected\n");
             break;    
         default:
-            perror("The response was an invalid frame\n");
+            printError(__func__, "The response was an invalid frame\n");
             break;
         }
     }
-    perror("TX:Number of tries excided\n");
+    printError(__func__, "TX:Number of tries excided\n");
     endPacketTrack();
     return -1;
 }
@@ -110,13 +107,13 @@ int llread(unsigned char *packet)
             int res = processByte(byte, packet, currFrame);
             if (res < 0)
             {
-                perror("There was an error while reciving the package.\n");
+                printError(__func__, "There was an error while reciving the package.\n");
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_REJ(currFrame));
                 rejectIncrement();
                 framesRecivedIncrement();
                 int response_size = writeBytesToSerialPort(response, COMMAND_SIZE);
                 if(response_size != COMMAND_SIZE){
-                    perror("Error sending Reject Frame!\n");
+                    printError(__func__, "Error sending Reject Frame!\n");
                 }
             }
             else if (res > 0)
@@ -126,7 +123,7 @@ int llread(unsigned char *packet)
                 unsigned char response[COMMAND_SIZE] = COMMAND(ADDRESS_SET, CTRL_RR(currFrame));
                 int responseSize = writeBytesToSerialPort(response, COMMAND_SIZE);
                 if(responseSize != COMMAND_SIZE){
-                    perror("Error sending the RR!\n");
+                    printError(__func__, "Error sending the RR!\n");
                 }
                 endPacketTrack();
                 return res;
@@ -134,9 +131,9 @@ int llread(unsigned char *packet)
         }
         else if (resp < 0)
         {
-            perror("Couldn't read the byte with alarm from the serial port, an error ocurred\n");
+            printError(__func__, "Couldn't read the byte with alarm from the serial port, an error ocurred\n");
         }else{
-            perror("Couldn't read with alarm.\n");
+            printError(__func__, "Couldn't read with alarm.\n");
         }
         
     }
@@ -145,9 +142,6 @@ int llread(unsigned char *packet)
 
 }
 
-////////////////////////////////////////////////
-// LLCLOSE
-////////////////////////////////////////////////
 int llclose()
 {
     //mudar as macros!!
@@ -158,19 +152,19 @@ int llclose()
     {
         if (sendFrame(discCommandTx, COMMAND_SIZE, discCommandRx, config.nRetransmissions) != 0)
         {
-            perror("Error sending DISC and/or receiving the DISC.\n");
+            printError(__func__, "Error sending DISC and/or receiving the DISC.\n");
             return -1;
         }
         //tenho que dar handle destas duas funções, tipo tentar varias vezes!?
         if (writeBytesToSerialPort(uaCommandTx, COMMAND_SIZE) != COMMAND_SIZE)
         {
-            perror("Error sending the UA command through the serial port.\n");
+            printError(__func__, "Error sending the UA command through the serial port.\n");
             return -1;
         }
 
         if (closeSerialPort() != 0)
         {
-            perror("Error closing the Serial port\n");
+            printError(__func__, "Error closing the Serial port\n");
             return -1;
         }
     }
@@ -178,18 +172,18 @@ int llclose()
     {
         if (readBytesAndCompare(discCommandTx,NULL) != 0)
         {
-            perror("Error receiving the disc command.\n");
+            printError(__func__, "Error receiving the disc command.\n");
             return -1;
         }
         if (sendFrame(discCommandRx, COMMAND_SIZE, uaCommandTx, config.nRetransmissions) != 0)
         {
-            perror("Error sending the DISC command and/or receiving the UA.\n");
+            printError(__func__, "Error sending the DISC command and/or receiving the UA.\n");
             return -1;
         }
         
         if (closeSerialPort() != 0)
         {
-            perror("Error closing the Serial port\n");
+            printError(__func__, "Error closing the Serial port\n");
             return -1;
         }
     }

@@ -19,7 +19,7 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
         try++;
         if (writeBytesToSerialPort(bytes, nBytes) != nBytes)
         {
-            perror("Error writing the frame to the serial port\n");
+            printError(__func__, "Error writing the frame to the serial port\n");
             continue;
         }
         if (readBytesAndCompare(ackByte, NULL) == 0)
@@ -28,10 +28,10 @@ int sendFrame(unsigned char *bytes, int nBytes, unsigned char *ackByte, int nRet
         }
         else
         {
-            perror("Error while reading/comparing bytes\n");
+            printError(__func__, "Error while reading/comparing bytes\n");
         }
     }
-    perror("Coudn't send Frame in the nRetransmissions\n");
+    printError(__func__, "Coudn't send Frame in the nRetransmissions\n");
     return -1;
 }
 
@@ -96,7 +96,7 @@ int byteReadStateMachine(unsigned char *frame)
         int res = readByteWithAlarm(&frame[pos]);
         if (res <= 0)
         {
-            perror("Couldn't read from the serial port\n");
+            printError(__func__, "Couldn't read from the serial port\n");
             return -1;
         }
         else

@@ -6,6 +6,7 @@
 #include <unistd.h>  
 #include "../macros.h"
 #include "../serial_port.h"
+#include "../debug.h"
 #include "alarm.h"
 #include "statistics.h"
 

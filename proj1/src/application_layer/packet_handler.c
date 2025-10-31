@@ -4,7 +4,7 @@ int writeControlPacket(unsigned char control, unsigned long fileSize, const char
     
     unsigned char nameSize = strlen(filename);
     if (nameSize > MAX_FILENAME_SIZE) {
-        perror("Error. The name of the file is too big (max 200 chars)\n");
+        printError(__func__, "Error. The name of the file is too big (max 200 chars)\n");
         return -1;
     }
 
@@ -32,12 +32,12 @@ int writeControlPacket(unsigned char control, unsigned long fileSize, const char
     pos += nameSize;
 
     if (pos != totalSize) {
-        perror("Internal error: incorrect size calculation \n");
+        printError(__func__, "Internal error: incorrect size calculation \n");
         return -1;
     }
 
     if(llwrite(buf, totalSize) < 0){
-        perror("Error sending all the control packet.\n");
+        printError(__func__, "Error sending all the control packet.\n");
         return -1;
     }
     return 0;
@@ -49,19 +49,19 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
     int pos = 0;
 
     if(buf[pos++] != control){
-        perror("Error in the control value.\n");
+        printError(__func__, "Error in the control value.\n");
         return -1;
     }
 
     // --- FILE SIZE ---
     if (buf[pos++] != FILE_SIZE_T) {
-        perror("Error: expected the file size field\n");
+        printError(__func__, "Error: expected the file size field\n");
         return -1;
     }
 
     unsigned char sizeFieldLen = buf[pos++];
     if (sizeFieldLen != 4) {
-        perror("Error: invalid file size length (max 4GB)\n");
+        printError(__func__, "Error: invalid file size length (max 4GB)\n");
         return -1;
     }
 
@@ -72,13 +72,13 @@ int readControlPacket(unsigned char control, const unsigned char *buf, unsigned 
 
     // --- FILE NAME ---
     if (buf[pos++] != FILE_NAME_T) {
-        perror("Error: expected the file name field\n");
+        printError(__func__, "Error: expected the file name field\n");
         return -1;
     }
 
     unsigned char nameSize = buf[pos++];
     if (nameSize > MAX_FILENAME_SIZE) {
-        perror("Error: received file name too long (max 200 chars)\n");
+        printError(__func__, "Error: received file name too long (max 200 chars)\n");
         return -1;
     }
 
