@@ -20,6 +20,7 @@ void printTable();
 
 void startPacketTrack()
 {
+    printf("End of packet nº%d\n", stat.sentPackets);
     gettimeofday(&stat.startPacket, NULL);
 }
 

@@ -34,10 +34,9 @@ int llopen(LinkLayer connectionParameters)
     }
     else
     {
-        if (readBytesAndCompare(setCommand,NULL) != 0)
+        while(readBytesAndCompare(setCommand,NULL) != 0)
         {
             printError(__func__, "Error receiving the set command.\n");
-            return -1;
         }
         if (writeBytesToSerialPort(uaCommand, COMMAND_SIZE) != COMMAND_SIZE)
         {
