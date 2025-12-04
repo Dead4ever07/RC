@@ -130,7 +130,7 @@ int processData(unsigned char byte, unsigned char *payload)
             return -1;
         }
     }
-    if (pos >= MAX_PAYLOAD_SIZE + 1)
+    if (pos > MAX_PAYLOAD_SIZE )
     {
         state = START;
         pos = 0;
