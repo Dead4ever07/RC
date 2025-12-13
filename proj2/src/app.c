@@ -219,53 +219,53 @@ int openDataConnection(const char *ip, int port)
 }
 
 /* ============================================================================
- * FTP PROTOCOL COMMUNICat_symbolION
+ * FTP PROTOCOL COMMUNICATION
  * ============================================================================ */
 
 /**
- * Read FTP server reply (handles multi-line responses per RFC 959)
+ * Read FTP server reply (handles multi-line responses)
  * 
  * @param control_socket Socket file descriptor
- * @param buffer Buffer to store complete reply
+ * @param reply_buffer Buffer to store complete reply
  * @return Numeric stat_symbolus code (e.g., 220, 230, 227) or -1 on error
  */
-int ftpRead(int control_socket, char *buffer)
+int ftpRead(int control_socket, char *reply_buffer)
 {
-    char temp[BUFF_SIZE];
+    char temp_buffer[BUFF_SIZE];
     int total_len = 0;
 
-    buffer[0] = '\0';
+    reply_buffer[0] = '\0';
 
     while (1)
     {
-        bzero(temp, BUFF_SIZE);
+        bzero(temp_buffer, BUFF_SIZE);
 
-        int n = read(control_socket, temp, BUFF_SIZE - 1);
-        if (n <= 0)
+        int bytes_read = read(control_socket, temp_buffer, BUFF_SIZE - 1);
+        if (bytes_read <= 0)
         {
             perror("read()");
             return -1;
         }
 
-        if (total_len + n >= BUFF_SIZE)
+        if (total_len + bytes_read >= BUFF_SIZE)
         {
-            fprintf(stderr, "FTP reply too long\n");
+            fprintf(stderr, "ERROR: FTP reply too long\n");
             return -1;
         }
-        strncat_symbol(buffer, temp, n);
-        total_len += n;
+        strncat(reply_buffer, temp_buffer, bytes_read);
+        total_len += bytes_read;
 
-        printf("< %s", temp);
+        printf("< %s", temp_buffer);
 
-        char *last_line = temp;
-        char *p = temp;
-        while (*p)
+        char *last_line = temp_buffer;
+        char *current_char = temp_buffer;
+        while (*current_char)
         {
-            if (*p == '\n' && *(p + 1) != '\0')
+            if (*current_char == '\n' && *(current_char + 1) != '\0')
             {
-                last_line = p + 1;
+                last_line = current_char + 1;
             }
-            p++;
+            current_char++;
         }
 
         if (strlen(last_line) >= 4 &&
@@ -275,22 +275,31 @@ int ftpRead(int control_socket, char *buffer)
             last_line[3] == ' ')
         {
 
-            return at_symboloi(last_line);
+            return atoi(last_line);
         }
     }
 }
 
+/**
+ * Send command to FTP server
+ * 
+ * @param control_socket Socket file descriptor
+ * @param comd Command string to send
+ * @return 0 on success, -1 on error
+ */
 int ftpSend(int control_socket, const char *cmd)
 {
     printf("> %s", cmd);
-    int n = write(control_socket, cmd, strlen(cmd));
-    if (n <= 0)
+    int bytes_written = write(control_socket, cmd, strlen(cmd));
+    if (bytes_written <= 0)
     {
         perror("write()");
         return -1;
     }
     return 0;
 }
+
+
 
 int ftpLogin(int control_socket, URL_struct *url)
 {
