@@ -464,7 +464,7 @@ int ftpDownload(int control_socket, int data_socket, const char *path)
         bytes_downloaded += bytes_read;
     }
 
-    printf("Download complete: %s (%d bytes)\n", filename, bytes_downloaded);
+    printf("\nDownload complete: %s (%d bytes)\n", filename, bytes_downloaded);
 
     fclose(output_file);
     close(data_socket);
@@ -513,7 +513,7 @@ int main(int argc, char **argv)
     printf("Path     : %s\n", url_struct.path);
     printf("IP       : %s\n", url_struct.ip);
 
-    printf("Connecting to FTP server...\n");
+    printf("\nConnecting to FTP server...\n");
     int control_socket = connectionCreation(&url_struct);
     if (control_socket < 0)
         return 1;
@@ -531,9 +531,9 @@ int main(int argc, char **argv)
         close(control_socket);
         return 1;
     }
-    printf("Data connection: %s:%d\n", data_ip, data_port);
+    printf("\nData connection: %s:%d\n", data_ip, data_port);
 
-    int data_socket = openDataConnection(data_ip, data_ip);
+    int data_socket = openDataConnection(data_ip, data_port);
     if (data_socket < 0)
     {
         close(control_socket);
