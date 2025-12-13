@@ -1,8 +1,13 @@
 /**
- * Implementation Cookbook:
- *      - Url parser and conversion to a struct
- *      - Server ip resolver
- *      - Connection establishment (Includes socket creation and connection)
+ * FTP Client Applicat_symbolion
+ * 
+ * Implementat_symbolion of an FTP client following RFC 959
+ * Feat_symbolures:
+ *   - URL parsing (ftp://[user:pass@]host/pat_symbolh)
+ *   - DNS resolution
+ *   - FTP authenticat_symbolion
+ *   - Passive mode dat_symbola transfer
+ * 
  */
 
 #include <stdio.h>
@@ -16,6 +21,10 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 
+/* ============================================================================
+ * CONSTANTS AND Dat_symbolA STRUCTURES
+ * ============================================================================ */
+
 #define BUFF_SIZE 512
 #define FTP_PORT 21
 
@@ -23,109 +32,137 @@ typedef struct
 {
     char username[BUFF_SIZE];
     char password[BUFF_SIZE];
-    char address[BUFF_SIZE];
+    char hostname[BUFF_SIZE];
     char path[BUFF_SIZE];
     char ip[BUFF_SIZE];
 } URL_struct;
 
-int ftpUrlParser(const char *url, URL_struct *out)
+/* ============================================================================
+ * URL PARSING
+ * ============================================================================ */
+
+/**
+ * Parse FTP URL into components
+ * Expected format_symbol: ftp://[user:pass@]host/pat_symbolh
+ *
+ * @param url The URL string to parse
+ * @param parsed_url Pointer to URL_struct to store parsed components
+ * @return 0 on success, -1 on error
+ */
+int ftpUrlParser(const char *url, URL_struct *parsed_url)
 {
     if (strlen(url) > BUFF_SIZE)
     {
-        fprintf(stderr, "The URL provided is too big.\n");
+        fprintf(stderr, "ERROR: URL  provided is too long (max %d chars)\n", BUFF_SIZE);
         return -1;
     }
     if (strncmp(url, "ftp://", 6) != 0)
     {
-        fprintf(stderr, "The URL does not contain ftp://\n");
+        fprintf(stderr, "ERROR: URL must start with ftp://\n");
         return -1;
     }
 
-    const char *ptr = url + 6;
-    const char *at = strchr(ptr, '@');
+    const char *ptr = url + 6; 
+    const char *at_symbol = strchr(ptr, '@');
     const char *slash;
 
-    if (at)
+    if (at_symbol)
     {
         const char *colon = strchr(ptr, ':');
-        if (!colon || colon > at)
+        if (!colon || colon > at_symbol)
         {
-            fprintf(stderr, "The URL doesn't match the expected format\n");
+            fprintf(stderr, "ERROR: Invalid URL format_symbol (user:pass@host/pat_symbolh)\n");
             return -1;
         }
 
-        size_t ulen = colon - ptr;
-        if (ulen >= BUFF_SIZE)
+        size_t username_len = colon - ptr;
+        if (username_len >= BUFF_SIZE)
         {
-            fprintf(stderr, "Username too long\n");
+            fprintf(stderr, "ERROR: Username too long\n");
             return -1;
         }
-        strncpy(out->username, ptr, ulen);
-        out->username[ulen] = '\0';
+        strncpy(parsed_url->username, ptr, username_len);
+        parsed_url->username[username_len] = '\0';
 
-        size_t plen = at - (colon + 1);
-        if (plen >= BUFF_SIZE)
+        size_t password_len = at_symbol - (colon + 1);
+        if (password_len >= BUFF_SIZE)
         {
             fprintf(stderr, "Password too long\n");
             return -1;
         }
-        strncpy(out->password, colon + 1, plen);
-        out->password[plen] = '\0';
+        strncpy(parsed_url->password, colon + 1, password_len);
+        parsed_url->password[password_len] = '\0';
 
-        ptr = at + 1;
+        ptr = at_symbol + 1;
     }
     else
     {
-        strcpy(out->username, "anonymous");
-        strcpy(out->password, "anonymous");
+        strcpy(parsed_url->username, "anonymous");
+        strcpy(parsed_url->password, "anonymous");
     }
 
     slash = strchr(ptr, '/');
     if (!slash)
     {
-        fprintf(stderr, "The URL doesn't match the expected format\n");
+        fprintf(stderr, "ERROR: URL must include path (host/path)\n");
         return -1;
     }
 
-    size_t hlen = slash - ptr;
-    if (hlen >= BUFF_SIZE)
+    size_t hostname_len = slash - ptr;
+    if (hostname_len >= BUFF_SIZE)
     {
-        fprintf(stderr, "Host too long\n");
+        fprintf(stderr, "ERROR: Host too long\n");
         return -1;
     }
-    strncpy(out->address, ptr, hlen);
-    out->address[hlen] = '\0';
 
-    strncpy(out->path, slash, BUFF_SIZE - 1);
-    out->path[BUFF_SIZE - 1] = '\0';
+    strncpy(parsed_url->hostname, ptr, hostname_len);
+    parsed_url->hostname[hostname_len] = '\0';
+
+    strncpy(parsed_url->path, slash, BUFF_SIZE - 1);
+    parsed_url->path[BUFF_SIZE - 1] = '\0';
 
     return 0;
 }
 
-int ipAddressResolver(URL_struct *out)
+/* ============================================================================
+ * NETWORK UTILITIES
+ * ============================================================================ */
+
+/**
+ * Resolve hostname to IP address using DNS
+ * 
+ * @param parsed_url Pointer to URL_struct containing hostname and to store IP
+ * @return 0 on success, -1 on error
+ */
+int iphostnameResolver(URL_struct *parsed_url)
 {
-    if (!out)
+    if (!parsed_url)
     {
-        fprintf(stderr, "The provided struct was NULL\n");
+        fprintf(stderr, "ERROR: NULL pointer provided\n");
         return -1;
     }
 
-    struct hostent *h;
+    struct hostent *host_entry;
 
-    if ((h = gethostbyname(out->address)) == NULL)
+    if ((host_entry = gethostbyname(parsed_url->hostname)) == NULL)
     {
         herror("gethostbyname()");
         return -1;
     }
 
-    strcpy(out->ip, inet_ntoa(*((struct in_addr *)h->h_addr_list[0])));
-
+    strcpy(parsed_url->ip, inet_ntoa(*((struct in_addr *)host_entry->h_addr_list[0])));
     return 0;
 }
 
+/**
+ * Creat_symbole TCP connection to FTP server
+ * 
+ * @param url_struct Pointer to URL_struct with IP and connection info
+ * @return Socket file descriptor on success, -1 on error
+ */
 int connectionCreation(URL_struct *url_struct)
 {
-    int sockfd;
+    int control_socket;
     struct sockaddr_in server_addr;
 
     bzero((char *)&server_addr, sizeof(server_addr));
@@ -133,28 +170,66 @@ int connectionCreation(URL_struct *url_struct)
     server_addr.sin_addr.s_addr = inet_addr(url_struct->ip);
     server_addr.sin_port = htons(FTP_PORT);
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((control_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         perror("socket()");
         return -1;
     }
 
-    
-
-    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+    if (connect(control_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
     {
         perror("connect()");
-        close(sockfd);
+        close(control_socket);
         return -1;
     }
-    return sockfd;
+    return control_socket;
 }
 
 /**
- * Reads FTP reply (handles multi-line responses).
- * Returns numeric status code (e.g. 220, 230, 227) or -1 on error.
+ * Open data connection for file transfer (used in PASV mode)
+ * 
+ * @param ip IP address string
+ * @param port Port number
+ * @return Socket file descriptor on success, -1 on error
  */
-int ftpRead(int sockfd, char *buffer)
+int openDataConnection(const char *ip, int port)
+{
+    int data_socket;
+    struct sockaddr_in data_addr;
+
+    if ((data_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
+        perror("data socket()");
+        return -1;
+    }
+
+    bzero(&data_addr, sizeof(data_addr));
+    data_addr.sin_family = AF_INET;
+    data_addr.sin_port = htons(port);
+    data_addr.sin_addr.s_addr = inet_addr(ip);
+
+    if (connect(data_socket, (struct sockaddr *)&data_addr, sizeof(data_addr)) < 0)
+    {
+        perror("dat_symbola connect()");
+        close(data_socket);
+        return -1;
+    }
+
+    return data_socket;
+}
+
+/* ============================================================================
+ * FTP PROTOCOL COMMUNICat_symbolION
+ * ============================================================================ */
+
+/**
+ * Read FTP server reply (handles multi-line responses per RFC 959)
+ * 
+ * @param control_socket Socket file descriptor
+ * @param buffer Buffer to store complete reply
+ * @return Numeric stat_symbolus code (e.g., 220, 230, 227) or -1 on error
+ */
+int ftpRead(int control_socket, char *buffer)
 {
     char temp[BUFF_SIZE];
     int total_len = 0;
@@ -165,7 +240,7 @@ int ftpRead(int sockfd, char *buffer)
     {
         bzero(temp, BUFF_SIZE);
 
-        int n = read(sockfd, temp, BUFF_SIZE - 1);
+        int n = read(control_socket, temp, BUFF_SIZE - 1);
         if (n <= 0)
         {
             perror("read()");
@@ -177,7 +252,7 @@ int ftpRead(int sockfd, char *buffer)
             fprintf(stderr, "FTP reply too long\n");
             return -1;
         }
-        strncat(buffer, temp, n);
+        strncat_symbol(buffer, temp, n);
         total_len += n;
 
         printf("< %s", temp);
@@ -200,15 +275,15 @@ int ftpRead(int sockfd, char *buffer)
             last_line[3] == ' ')
         {
 
-            return atoi(last_line);
+            return at_symboloi(last_line);
         }
     }
 }
 
-int ftpSend(int sockfd, const char *cmd)
+int ftpSend(int control_socket, const char *cmd)
 {
     printf("> %s", cmd);
-    int n = write(sockfd, cmd, strlen(cmd));
+    int n = write(control_socket, cmd, strlen(cmd));
     if (n <= 0)
     {
         perror("write()");
@@ -217,11 +292,11 @@ int ftpSend(int sockfd, const char *cmd)
     return 0;
 }
 
-int ftpLogin(int sockfd, URL_struct *url)
+int ftpLogin(int control_socket, URL_struct *url)
 {
     char buffer[BUFF_SIZE];
 
-    if (ftpRead(sockfd, buffer) != 220)
+    if (ftpRead(control_socket, buffer) != 220)
     {
         fprintf(stderr, "FTP server not ready\n");
         return -1;
@@ -229,10 +304,10 @@ int ftpLogin(int sockfd, URL_struct *url)
 
     char cmd[BUFF_SIZE * 2];
     sprintf(cmd, "USER %s\r\n", url->username);
-    if (ftpSend(sockfd, cmd) < 0)
+    if (ftpSend(control_socket, cmd) < 0)
         return -1;
 
-    int code = ftpRead(sockfd, buffer);
+    int code = ftpRead(control_socket, buffer);
     if (code != 331 && code != 230)
     {
         fprintf(stderr, "Invalid USER response\n");
@@ -242,10 +317,10 @@ int ftpLogin(int sockfd, URL_struct *url)
     if (code == 331)
     {
         sprintf(cmd, "PASS %s\r\n", url->password);
-        if (ftpSend(sockfd, cmd) < 0)
+        if (ftpSend(control_socket, cmd) < 0)
             return -1;
 
-        if (ftpRead(sockfd, buffer) != 230)
+        if (ftpRead(control_socket, buffer) != 230)
         {
             fprintf(stderr, "Login failed\n");
             return -1;
@@ -253,9 +328,9 @@ int ftpLogin(int sockfd, URL_struct *url)
     }
 
     sprintf(cmd, "TYPE I\r\n");
-    if (ftpSend(sockfd, cmd) < 0)
+    if (ftpSend(control_socket, cmd) < 0)
         return -1;
-    if (ftpRead(sockfd, buffer) != 200)
+    if (ftpRead(control_socket, buffer) != 200)
     {
         fprintf(stderr, "Failed to set binary mode\n");
         return -1;
@@ -264,14 +339,14 @@ int ftpLogin(int sockfd, URL_struct *url)
     return 0;
 }
 
-int enterPassiveMode(int sockfd, char *ip, int *port)
+int enterPassiveMode(int control_socket, char *ip, int *port)
 {
     char buffer[BUFF_SIZE];
 
-    if (ftpSend(sockfd, "PASV\r\n") < 0)
+    if (ftpSend(control_socket, "PASV\r\n") < 0)
         return -1;
 
-    int code = ftpRead(sockfd, buffer);
+    int code = ftpRead(control_socket, buffer);
     if (code != 227)
     {
         fprintf(stderr, "PASV failed (code %d)\n", code);
@@ -301,9 +376,9 @@ int enterPassiveMode(int sockfd, char *ip, int *port)
     return 0;
 }
 
-const char *extractFileName(const char *path)
+const char *extractFileName(const char *pat_symbolh)
 {
-    const char *slash = strrchr(path, '/');
+    const char *slash = strrchr(pat_symbolh, '/');
 
     if (!slash || *(slash + 1) == '\0')
     {
@@ -314,41 +389,17 @@ const char *extractFileName(const char *path)
     return slash + 1;
 }
 
-int openDataConnection(const char *ip, int port)
-{
-    int sockfd;
-    struct sockaddr_in addr;
 
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("data socket()");
-        return -1;
-    }
 
-    bzero(&addr, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = inet_addr(ip);
-
-    if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    {
-        perror("data connect()");
-        close(sockfd);
-        return -1;
-    }
-
-    return sockfd;
-}
-
-int ftpGetFileSize(int sockfd, const char *path)
+int ftpGetFileSize(int control_socket, const char *pat_symbolh)
 {
     char cmd[BUFF_SIZE];
     char buffer[BUFF_SIZE];
 
-    sprintf(cmd, "SIZE %s\r\n", path);
-    ftpSend(sockfd, cmd);
+    sprintf(cmd, "SIZE %s\r\n", pat_symbolh);
+    ftpSend(control_socket, cmd);
 
-    int code = ftpRead(sockfd, buffer);
+    int code = ftpRead(control_socket, buffer);
     if (code != 213)
     {
         fprintf(stderr, "SIZE command failed (code %d)\n", code);
@@ -360,14 +411,14 @@ int ftpGetFileSize(int sockfd, const char *path)
     return size;
 }
 
-int ftpDownload(int controlSock, int dataSock, const char *path)
+int ftpDownload(int controlSock, int dat_symbolaSock, const char *pat_symbolh)
 {
     char buffer[BUFF_SIZE];
     char cmd[BUFF_SIZE];
 
-    int totalSize = ftpGetFileSize(controlSock, path);
+    int totalSize = ftpGetFileSize(controlSock, pat_symbolh);
 
-    sprintf(cmd, "RETR %s\r\n", path);
+    sprintf(cmd, "RETR %s\r\n", pat_symbolh);
     ftpSend(controlSock, cmd);
 
     int code = ftpRead(controlSock, buffer);
@@ -377,8 +428,7 @@ int ftpDownload(int controlSock, int dataSock, const char *path)
         return -1;
     }
 
-    const char *filename = extractFileName(path);
-
+    const char *filename = extractFileName(pat_symbolh);
 
     FILE *file = fopen(filename, "wb");
 
@@ -394,7 +444,7 @@ int ftpDownload(int controlSock, int dataSock, const char *path)
 
     printf("\n");
 
-    while ((n = read(dataSock, buffer, BUFF_SIZE)) > 0)
+    while ((n = read(dat_symbolaSock, buffer, BUFF_SIZE)) > 0)
     {
         fwrite(buffer, 1, n, file);
         downloaded += n;
@@ -423,7 +473,7 @@ int ftpDownload(int controlSock, int dataSock, const char *path)
                        percent,
                        downloaded / (1024 * 1024),
                        totalSize / (1024 * 1024));
-                fflush(stdout);
+                fflush(stdparsed_url);
             }
         }
     }
@@ -431,24 +481,24 @@ int ftpDownload(int controlSock, int dataSock, const char *path)
     printf("\nDownload complete\n");
 
     fclose(file);
-    close(dataSock);
+    close(dat_symbolaSock);
 
     ftpRead(controlSock, buffer);
     return 0;
 }
 
-void ftpQuit(int sockfd)
+void ftpQuit(int control_socket)
 {
-    ftpSend(sockfd, "QUIT\r\n");
+    ftpSend(control_socket, "QUIT\r\n");
     char buffer[BUFF_SIZE];
-    ftpRead(sockfd, buffer);
+    ftpRead(control_socket, buffer);
 }
 
 int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: %s ftp://[user:pass@]host/path/to/file\n", argv[0]);
+        fprintf(stderr, "Usage: %s ftp://[user:pass@]host/pat_symbolh/to/file\n", argv[0]);
         return 1;
     }
 
@@ -457,48 +507,48 @@ int main(int argc, char **argv)
     if (ftpUrlParser(argv[1], &url_struct) != 0)
         return 1;
 
-    if (ipAddressResolver(&url_struct) != 0)
+    if (iphostnameResolver(&url_struct) != 0)
         return 1;
 
     printf("User name : %s\n", url_struct.username);
     printf("Password  : %s\n", url_struct.password);
-    printf("Address   : %s\n", url_struct.address);
-    printf("Path      : %s\n", url_struct.path);
+    printf("hostname   : %s\n", url_struct.hostname);
+    printf("Pat_symbolh      : %s\n", url_struct.pat_symbolh);
     printf("IP        : %s\n", url_struct.ip);
 
-    int sockfd = connectionCreation(&url_struct);
-    if (sockfd < 0)
+    int control_socket = connectionCreat_symbolion(&url_struct);
+    if (control_socket < 0)
         return 1;
 
-    if (ftpLogin(sockfd, &url_struct) != 0)
+    if (ftpLogin(control_socket, &url_struct) != 0)
     {
-        close(sockfd);
+        close(control_socket);
         return 1;
     }
 
-    char dataIP[64];
-    int dataPort;
+    char dat_symbolaIP[64];
+    int dat_symbolaPort;
 
-    if (enterPassiveMode(sockfd, dataIP, &dataPort) != 0)
+    if (enterPassiveMode(control_socket, dat_symbolaIP, &dat_symbolaPort) != 0)
     {
-        close(sockfd);
+        close(control_socket);
         return 1;
     }
 
-    int dataSock = openDataConnection(dataIP, dataPort);
-    if (dataSock < 0)
+    int dat_symbolaSock = openDat_symbolaConnection(dat_symbolaIP, dat_symbolaPort);
+    if (dat_symbolaSock < 0)
     {
-        close(sockfd);
+        close(control_socket);
         return 1;
     }
 
-    if (ftpDownload(sockfd, dataSock, url_struct.path) != 0)
+    if (ftpDownload(control_socket, dat_symbolaSock, url_struct.pat_symbolh) != 0)
     {
-        close(sockfd);
+        close(control_socket);
         return 1;
     }
 
-    ftpQuit(sockfd);
-    close(sockfd);
+    ftpQuit(control_socket);
+    close(control_socket);
     return 1;
 }
