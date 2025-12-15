@@ -180,15 +180,15 @@ int ipHostnameResolver(URL_struct *parsed_url)
  * @param url_struct Pointer to URL_struct with IP and connection info
  * @return Socket file descriptor on success, -1 on error
  */
-int connectionCreation(URL_struct *url_struct)
+int connectionCreation(const char *ip, int port)
 {
     int control_socket;
     struct sockaddr_in server_addr;
 
     bzero((char *)&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(url_struct->ip);
-    server_addr.sin_port = htons(FTP_PORT);
+    server_addr.sin_addr.s_addr = inet_addr(ip);
+    server_addr.sin_port = htons(port);
 
     if ((control_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -205,38 +205,6 @@ int connectionCreation(URL_struct *url_struct)
     return control_socket;
 }
 
-/**
- * Open data connection for file transfer (used in PASV mode)
- *
- * @param ip IP address string
- * @param port Port number
- * @return Socket file descriptor on success, -1 on error
- */
-int openDataConnection(const char *ip, int port)
-{
-    int data_socket;
-    struct sockaddr_in data_addr;
-
-    if ((data_socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        perror("data socket()");
-        return -1;
-    }
-
-    bzero(&data_addr, sizeof(data_addr));
-    data_addr.sin_family = AF_INET;
-    data_addr.sin_port = htons(port);
-    data_addr.sin_addr.s_addr = inet_addr(ip);
-
-    if (connect(data_socket, (struct sockaddr *)&data_addr, sizeof(data_addr)) < 0)
-    {
-        perror("dat_symbola connect()");
-        close(data_socket);
-        return -1;
-    }
-
-    return data_socket;
-}
 
 /* ============================================================================
  * FTP PROTOCOL COMMUNICATION
@@ -493,7 +461,7 @@ int main(int argc, char **argv)
 {
     if (argc != 2)
     {
-        fprintf(stderr, "Usage: %s ftp://[user:pass@]host/pat_symbolh/to/file\n", argv[0]);
+        fprintf(stderr, "Usage: %s ftp://[user:pass@]host/path_symbol/to/file\n", argv[0]);
         return 1;
     }
 
@@ -514,7 +482,7 @@ int main(int argc, char **argv)
     printf("IP       : %s\n", url_struct.ip);
 
     printf("\nConnecting to FTP server...\n");
-    int control_socket = connectionCreation(&url_struct);
+    int control_socket = connectionCreation(url_struct.ip, FTP_PORT);
     if (control_socket < 0)
         return 1;
 
@@ -533,7 +501,7 @@ int main(int argc, char **argv)
     }
     printf("\nData connection: %s:%d\n", data_ip, data_port);
 
-    int data_socket = openDataConnection(data_ip, data_port);
+    int data_socket = connectionCreation(data_ip, data_port);
     if (data_socket < 0)
     {
         close(control_socket);
@@ -548,5 +516,5 @@ int main(int argc, char **argv)
 
     ftpQuit(control_socket);
     close(control_socket);
-    return 1;
+    return 0;
 }

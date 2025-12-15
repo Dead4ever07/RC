@@ -19,7 +19,11 @@ $(BIN_DIR)/$(TARGET): $(OBJECTS)
 $(BIN_DIR)/%.o: $(SRC_DIR)/%.c | $(BIN_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-run: ./$(BIN_DIR)/$(TARGET)
+run: all 
+	./$(BIN_DIR)/$(TARGET) $(filter-out $@,$(MAKECMDGOALS))
+
+%:
+	@:
 
 clean:
 	rm -rf $(BIN_DIR)
