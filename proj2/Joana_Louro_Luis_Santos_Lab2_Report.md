@@ -200,7 +200,7 @@ Flags are single-letter indicators showing the route's properties and status.
 
 Common flags include:
 - **U (Up)**: Route is active and usable
-- **G (Gateway)**: Route uses a gateway (indirect route - Gateway field contains an IP address)
+- **G (Gateway)**: Route uses a gateway
 - **H (Host)**: Route is to a specific host (/32), not a network
 - **D (Dynamic)**: Route was created dynamically by routing protocols or ICMP redirects
 
@@ -254,6 +254,27 @@ The interface must be active for the route to work.
 ## Experience 6 - TCP connections
 
 ### How many TCP connections are opened by your FTP application?
+The FTP protocol uses two separate TCP connections the Control Connection and Data Connection.
+This separation provides:
+- Independence: Commands can be sent while data is transferring.
+- Flexibility: Different transfer modes and parameters.
+- Reliability: Control channel remains open even if data transfer fails.
+
+#### Control Connection (Command Channel)
+- Port: Server port 21
+- Purpose: Send FTP commands and receive server responses
+- Lifetime: Established first, remains open during entire FTP session, closed at the end
+- Protocol: Commands and responses are ASCII text ending with \r\n
+- Examples: USER, PASS, TYPE, PASV, RETR, QUIT commands
+
+#### Data Connection (Data Channel)
+
+- Port: Negotiated dynamically, in passive mode, server tells client which port to connect to
+- Purpose: Transfer the actual file binary data
+- Lifetime: Opened after entering passive mode, closed after file transfer completes
+- Usage: File downloads, directory listings
+- Protocol: Binary data transfer
+
 ### In what connection is transported the FTP control information?
 ### What are the phases of a TCP connection?
 ### How does the ARQ TCP mechanism work? What are the relevant TCP fields? What relevant information can be observed in the logs?
