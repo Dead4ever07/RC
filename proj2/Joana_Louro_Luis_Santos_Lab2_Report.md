@@ -5,7 +5,7 @@
 **Computer Networks – L.EIC, FEUP (2025/2026)**
 
 **Authors:** Joana Louro (class 4), Luís Santos (class 4)  
-**Date:** *23/12/2026*
+**Date:** *23/12/2025*
 
 </div>
 
@@ -16,12 +16,6 @@
 (do the introduction latter)
 
 # Part 1 - Development of a download application
-
-
-– Report of a successful download, including print-screen of Wireshark logs showing the FTP packets -> Important ter a priint disto!!!
-
-# Part 2 - Configuration and Study of a Network
-## Experience 1 - Configure an IP Network
 ### Architecture of the Download Application
 
 The FTP download application follows a modular and layered architecture.
@@ -38,6 +32,12 @@ The application is divided into the following logical components:
 
 This design improves readability, maintainability, and protocol correctness.
 
+
+– Report of a successful download, including print-screen of Wireshark logs showing the FTP packets -> Important ter a priint disto!!!!!
+
+# Part 2 - Configuration and Study of a Network
+## Experience 1 - Configure an IP Network
+
 ### What are the ARP packets and what are they used for?
 ARP (Address Resolution Protocol) packets are used to map a known IP address to an unknown MAC address inside a LAN.
 In this experience, when we did a ping to tuxY4, after deleting the arp tables entries in the computer we were using tuxY3. 
@@ -48,65 +48,136 @@ Then the tuxY4 sent the Arp reply (172.16.Y0.254 is at 8c:86:dd:84:c0:2e).
 ### What are the MAC and IP addresses of ARP packets and why?
 #### ARP Request
 
-!!!FALTA PREENCHER O MACADRESS DO TUX 3!!!!
 | Field | MAC Address | IP Address |
 |-------|-------------|------------|
-| **Origin** |  (tuxY3)   | 172.16.Y0.1 (tuxY3) |
-| **Destination** | ff:ff:ff:ff:ff:ff | 172.16.Y0.254 (tuxY4) |
+| **Origin** |  ec:75:0c:c2:51:c1 (tuxY3)   | 172.16.Y0.1 (tuxY3) |
+| **Destination** | ff:ff:ff:ff:ff:ff (broadcast) | 172.16.Y0.254 (tuxY4) |
 
 #### ARP Reply
 
 | Field | MAC Address | IP Address |
 |------|------------|------------|
 | **Origin** | 8c:86:dd:84:c0:2e (tuxY4) | 172.16.Y0.254 (tuxY4) |
-| **Destination** | (tuxY3) | 172.16.Y0.1 (tux Y3) |
+| **Destination** | ec:75:0c:c2:51:c1 (tuxY3) | 172.16.Y0.1 (tux Y3) |
 
+![ARP](images/arp_mac_adresses.png) 
 
 ### What packets does the ping command generate?
 It can generate ARP request if the destination is not in the ARP tables. It also generates a ICMP (Internet Control Message Protocol), this is used to test the connectivity and mesure latency. 
 ### What are the MAC and IP addresses of the ping packets?
-??
 In the case of the ARP packets this is answered before.
-!!!PROF posso dizer isto!!!
-For the ICMP packets preencher!!!:
-
+For the ICMP packets:
+#### ICMP Echo request
 | Field | MAC Address | IP Address |
 |-------|-------------|------------|
-| **Origin** |  (tuxY3)   | 172.16.Y0.1 (tuxY3) |
-| **Destination** | ff:ff:ff:ff:ff:ff | 172.16.Y0.254 (tuxY4) |
+| **Origin** |  ec:75:0c:c2:51:c1 (tuxY3)   | 172.16.Y0.1 (tuxY3) |
+| **Destination** | 8c:86:dd:84:c0:2e (tuxY4) | 172.16.Y0.254 (tuxY4) |
 
-#### ARP Reply
+#### ICMP Echo reply
 
 | Field | MAC Address | IP Address |
 |------|------------|------------|
 | **Origin** | 8c:86:dd:84:c0:2e (tuxY4) | 172.16.Y0.254 (tuxY4) |
-| **Destination** | (tuxY3) | 172.16.Y0.1 (tux Y3) |
-
-colocar o que está no wireshark, src and destination
+| **Destination** | ec:75:0c:c2:51:c1(tuxY3) | 172.16.Y0.1 (tux Y3) |
 
 ### How to determine if a receiving Ethernet frame is ARP, IP, ICMP?
-?? mostrar print o cabeçalho mac tem os pacotes  parte do header que diz de que pacote pertecne!!!
+The value in the Ethernet II type changes. The type is in the header after the origin mac adress and the destination mac adress. As you can see in this image.
+
+![Frame type](images/arp_icmp_type.png) 
+
+When the frame type is:
+- **0x0806** we know it contains an **ARP packet**
+- **0x0800** we know it contains an **IP packet**
+
+#### IP Packet Protocol Identification:
+
+Once we've identified that an Ethernet frame contains an IP packet, we need to determine what protocol is encapsulated inside the IP packet. 
+
+We do this by examining the Protocol field in the IP header.
+- When the IP Protocol field is 1, the IP packet contains an ICMP message.
+- When the IP Protocol field is 6, the IP packet contains a TCP segment.
+- When the IP Protocol field is 17, the IP packet contains a UDP datagram.
+
+![Protocol Field](images/protocol_field.png)
 
 ### How to determine the length of a receiving frame?
-The lenght of a frame is already
-??
+In Ethernet II, there is no Length field in the MAC header. The frame length is determined by the MAC using signals from the Physical layer.
+The phisical layer detects the Start Frame Delimiter (SFD), which indicates the beginning of the frame, and the MAC starts counting bytes from that point.
+The end of the frame is detected when the phisical layer signals end of carrier / end of reception. At that moment, the MAC stops counting bytes.
 
 ### What is the loopback interface and why is it important?
+A loopback interface is a virtual software network connection that enables the computer to send data to itself. Any packet sent to the loopback interface never leaves the system; it is immediately received and processed internally by the network stack as if it had arrived from an external network.
 
+This interface is always active and unaffected by the state of the physical network interfaces. It has a consistent IP address that remains available even if physical links go down. 
 
-at the end put the wireshark picture!
-
+By allowing the system to act simultaneously as both sender and receiver, the loopback interface provides a reliable mechanism for self-communication.
 
 ## Experience 2 - Implement two bridges in a switch
 
 ### How to configure bridgeY0?
-### How many broadcast domains are there? How can you conclude it from the logs?
+To configure bridgeY0 we need to create the bridgeY0 interface on a Mikrotik switch. Next, we remove the selected ports from the original bridge to prevent configuration conflicts.
+Finaly, we add these Ethernet ports to the newly created bridgeY0, assigning them as bridge ports.
+
+### How many broadcast domains are there? 
+A broadcast domain is a logical network segment where all devices receive a copy of every broadcast frame sent. There are two broadcast domains. Each configured bridge (bridgeY0 and bridgeY1) defines a separate broadcast domain. Devices connected to the same bridge belong to the same broadcast domain, while broadcasts are not forwarded between different bridges.
+### How can you conclude it from the logs?
+A broadcast frame uses the destination MAC address ff:ff:ff:ff:ff:ff, which is flooded by the switch to all ports belonging to the same broadcast domain only.
+#### When a broadcast ping was sent from tuxY3:
+- The broadcast ICMP Echo Request was captured on tuxY4, which is connected to the same bridge (bridgeY0).
+- No broadcast packet was captured on tuxY2, which belongs to bridgeY1.
+
+This shows that the broadcast was confined to the bridgeY0 broadcast domain.
+
+PICC do tux4 ao fazer broadcast no 3 + pic do y2!! (mostrar a primeira parte) !!!
+
+#### When a broadcast ping was sent from tuxY2:
+- No packets were captured on tuxY3 or tuxY4, which are connected to bridgeY0.
+
+This confirms that the broadcast was confined to the bridgeY1 broadcast domain.
+
+PICC do tux4 ao fazer broadcast no 3 + pic do y2!! (mostrar a segunda parte) !!!
+
+Therefore, the captured logs demonstrate that broadcasts do not cross bridges and confirm the existence of two distinct broadcast domains.
 
 ## Experience 3 - Configure a Router in Linux
 
-### What routes are there in the tuxes? What are their meaning?
+### What routes are there in the tuxes? 
+Each tux will have different routing table entries:
+#### tuxY3:
+| Number | Destination | Gateway | Genmask | Iface |
+| --     |-------------|---------|---------|-------|
+|     1  | 0.0.0.0 | 10.227.20.254 | 0.0.0.0 | if_mng |
+|     2  | 10.227.20.0 | 0.0.0.0 | 255.255.255.0 | if_mng |
+|     3  | 172.16.Y0.0 | 0.0.0.0 | 255.255.255.0 | if_e1 |
+|     4  | 172.16.Y1.0 | 172.16.Y0.254 | 255.255.255.0 | if_e1 |
+
+#### tuxY4:
+| Number | Destination | Gateway | Genmask | Iface |
+| --     |-------------|---------|---------|-------|
+|     1  | 0.0.0.0 | 10.227.20.254 | 0.0.0.0 | if_mng |
+|     2  | 10.227.20.0 | 0.0.0.0 | 255.255.255.0 | if_mng |
+|     5  | 172.16.Y0.0 | 0.0.0.0 | 255.255.255.0 | if_e1 |
+|     6  | 172.16.Y1.0 | 0.0.0.0 | 255.255.255.0 | if_e2 |
+
+#### tuxY2:
+| Number | Destination | Gateway | Genmask | Iface |
+| --     |-------------|---------|---------|-------|
+|     1  | 0.0.0.0 | 10.227.20.254 | 0.0.0.0 | if_mng | 
+|     2  | 10.227.20.0 | 0.0.0.0 | 255.255.255.0 | if_mng | 
+|     7  | 172.16.Y0.0 | 172.16.Y1.253 | 255.255.255.0 | if_e1 | 
+|     8  | 172.16.Y1.0 | 0.0.0.0 | 255.255.255.0 | if_e1 |
+
+### What are their meaning?
+
+**1.** The route is used to send all trafic that does not match 
+
+The route Nº 1 is used to send all trafic that does not fit the other routes into the router.
+
+
 ### What information does an entry of the forwarding table contain?
+pic!!
 ### What ARP messages, and associated MAC addresses, are observed and why?
+
 ### What ICMP packets are observed and why?
 ### What are the IP and MAC addresses associated to ICMP packets and why?
 
@@ -134,12 +205,9 @@ at the end put the wireshark picture!
 
 # Conclusion
 
-# Anexes
 
 !PROF!
-- perguntar ao prof como ele quer os anexos e a estrutura de cada experiência e/ou os comandos de cada experiência e as fotos referentes!
-- o prof quer indice? por causa do max...
-- para por o código da aplication, o prof quer que eu literalmente copie e cole?
-Adaptar os relatórios com os resultados recebidos!
+- inicio os comandos!!
+
 
 
