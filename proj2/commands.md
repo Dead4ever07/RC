@@ -39,16 +39,7 @@
 ```
 
 If they both succeed the configuration is well done
-
-
-
-
-
-
 ## Exp2
-
-
-### Configure the if_e1 in tux83
 
 ### Connect the following cables:
  - Connect E1 of tuxY2 to the ether14
@@ -189,13 +180,6 @@ sysctl net.ipv4.conf.all.accept_redirects=0
 route del -net 172.16.Y0.0/24 gw 172.16.Y1.253
 sudo route add -net 172.16.Y0.0/24 gw 172.16.Y1.254 
 ```
-
-
-
-
-
-
-
 
 
 

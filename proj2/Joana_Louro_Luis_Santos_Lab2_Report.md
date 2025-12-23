@@ -37,6 +37,20 @@ This design improves readability, maintainability, and protocol correctness.
 
 # Part 2 - Configuration and Study of a Network
 ## Experience 1 - Configure an IP Network
+### The main configuration commands used:
+``` bash
+# Connect the following cables:
+# - Connect E1 of tuxY3 to the ether22
+# - Connect E1 of tuxY4 to the ether24
+
+# Configure the if_e1 in tuxY3
+ifconfig if_e1 up
+ifconfig if_e1 172.16.Y0.1/24
+
+# Configure the if_e1 in tuxY4
+ifconfig if_e1 up
+ifconfig if_e1 172.16.Y0.254/24
+```
 
 ### What are the ARP packets and what are they used for?
 ARP (Address Resolution Protocol) packets are used to map a known IP address to an unknown MAC address inside a LAN.
@@ -113,6 +127,25 @@ This interface is always active and unaffected by the state of the physical netw
 By allowing the system to act simultaneously as both sender and receiver, the loopback interface provides a reliable mechanism for self-communication.
 
 ## Experience 2 - Implement two bridges in a switch
+### The main configuration commands used:
+``` bash
+# Connect the following cables:
+# - Connect E1 of tuxY2 to the ether14
+## Creation of bridges:
+/interface bridge add name=bridgeY0
+/interface bridge add name=bridgeY1
+/interface bridge print
+# Removing the ports from the original bridges:
+/interface bridge port remove [find interface =ether14]
+/interface bridge port remove [find interface =ether22]
+/interface bridge port remove [find interface =ether24]
+/interface bridge port print brief
+# Add the ports to their bridges:
+/interface bridge port add bridge=bridgeY1 interface=ether14
+/interface bridge port add bridge=bridgeY0 interface=ether22
+/interface bridge port add bridge=bridgeY0 interface=ether24
+/interface bridge port print brief
+```
 
 ### How to configure bridgeY0?
 To configure bridgeY0 we need to create the bridgeY0 interface on a Mikrotik switch. Next, we remove the selected ports from the original bridge to prevent configuration conflicts.
@@ -140,7 +173,31 @@ PICC do tux4 ao fazer broadcast no 3 + pic do y2!! (mostrar a segunda parte) !!!
 Therefore, the captured logs demonstrate that broadcasts do not cross bridges and confirm the existence of two distinct broadcast domains.
 
 ## Experience 3 - Configure a Router in Linux
+### The main configuration commands used:
+``` bash
+# Connect the following cables:
+# - Connect E2 of tuxY4 to the ether23
 
+# Configure interface if_e2 on TuxY4 and add it to bridgeY1 on E2:  
+ifconfig if_e2 up
+ifconfig if_e2 172.16.Y1.253/24
+
+# Add the ports to their bridges:
+/interface bridge port add bridge=bridgeY1 interface=ether23
+/interface bridge port print brief
+
+# Enable IP forwarding and disable ICMP echo-ignore-broadcast
+sudo sysctl net.ipv4.ip_forward=1 # Enabling Ip forwarding
+sudo sysctl net.ipv4.icmp_echo_ignore_broadcasts=0 # Disabling ICMP echo ignore broadcast
+
+# Reconfigure tuxY3 and tuxY2 so that each of them can reach the other
+# TUX2
+sudo route add -net 172.16.Y0.0/24 gw 172.16.Y1.253 
+
+# TUX3
+sudo route add -net 172.16.Y1.0/24 gw 172.16.Y0.254 
+
+```
 ### What routes are there in the tuxes? 
 Each tux will have different routing table entries:
 #### tuxY3:
@@ -239,6 +296,42 @@ The interface must be active for the route to work.
 ### What are the IP and MAC addresses associated to ICMP packets and why?
 
 ## Experience 4 - Configure a Commercial Router and Implement NAT
+### The main configuration commands used:
+``` bash
+# Connect ether1 of RC to the lab network on PY.12
+
+# Remove the ether16 and add it to bridgeY1:
+/interface bridge port remove [find interface =ether16]
+/interface bridge port add bridge=bridgeY1 interface=ether16
+/interface bridge port print brief
+
+# Configure the IP addresses of RC through the router serial console
+/ip address add address=172.16.1.Y1/24 interface=ether1
+/ip address add address=172.16.Y1.254/24 interface=ether2
+/ip address print
+
+# Configure the IP addresses of RC through the router serial console:
+/ip address add address=172.16.1.Y9/24 interface=ether1
+/ip address print
+
+# Verify routes and add if necessary:
+# TUX2 – routes for 172.16.Y0.0/24 and 172.16.1.0/24
+route -n
+sudo route add -net 172.16.1.0/24 gw 172.16.Y1.254 
+
+# TUX3 – routes for 172.16.Y1.0/24 and 172.16.1.0/24
+route -n
+sudo route add -net 172.16.1.0/24 gw 172.16.Y0.254 
+
+# TUX4 – routes for 172.16.1.0/24
+route -n
+sudo route add -net 172.16.1.0/24 gw 172.16.Y1.254 
+
+# RC – routes for 172.16.Y0.0/24
+/ip route add dst-address=172.16.80.0/24 gateway=172.16.81.253
+/ip route print
+
+```
 
 ### How to configure a static route in a commercial router?
 ### What are the paths followed by the packets, with and without ICMP redirect enabled, in the experiments carried out and why?
@@ -307,8 +400,7 @@ Connection fully closed.
 # Conclusion
 
 
-!PROF!
-- inicio os comandos!!
+
 
 
 
