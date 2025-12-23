@@ -175,7 +175,64 @@ The route Nº 1 is used to send all trafic that does not fit the other routes in
 
 
 ### What information does an entry of the forwarding table contain?
-pic!!
+Each forwarding table entry contains:
+#### Destination network
+The Destination network is the IP address or network prefix that this route applies to. It can be a single host (a specific IP address) or a network/subnet (e.g. 192.168.1.0/24). A destination of 0.0.0.0 represents the default route, which matches any destination not covered by more specific routes.
+
+When forwarding packets, the router compares the destination IP of each outgoing packet against this field. The routing algorithm uses **longest prefix matching**, meaning the route with the most specific match is chosen.
+#### Gateway (gw)
+The Gateway is the IP address of the next router that should receive packets for this destination. 
+
+- When the gateway is **0.0.0.0**, the route is **directly connected**. No intermediate router is needed because the destination is on the local network segment. The system can reach it directly.
+
+- When the gateway is an IP address (e.g. 172.16.80.254) the route is indirect.Packets must first be sent to this gateway router, which then forwards them toward the final destination. The gateway must be reachable via a directly connected network. This means the gateway's IP address must be on the same subnet as one of the router's interfaces.
+#### Genmask:
+The Genmask defines which bits of the IP address represent the network portion versus the host portion. The mask is applied (bitwise AND) to both the destination IP and the route's destination. If they match after masking, the route applies.
+It can be written as:
+- Dotted decimal: 255.255.255.0
+- CIDR prefix length: /24
+**Example:**
+- Genmask 255.255.255.0 (/24) = 24 network bits, 8 host bits = 256 addresses
+- Genmask 0.0.0.0 (/0) = 0 network bits = matches all addresses (default route)
+
+#### Flags
+Flags are single-letter indicators showing the route's properties and status.
+
+Common flags include:
+- **U (Up)**: Route is active and usable
+- **G (Gateway)**: Route uses a gateway (indirect route - Gateway field contains an IP address)
+- **H (Host)**: Route is to a specific host (/32), not a network
+- **D (Dynamic)**: Route was created dynamically by routing protocols or ICMP redirects
+
+Multiple flags can be combined. For example, **UG** means the route is both Up and uses a Gateway.
+
+#### Metric
+Metric is a numeric value representing the cost or distance of a route. Lower values are preferred. When multiple routes exist to the same destination, the metric determines which one to use.
+
+#### Ref
+Ref is the number of references to this route. It counts how many times this route entry is currently being referenced by the kernel. Primarily used internally by the Linux kernel for memory management. In modern Linux systems, this field is almost always 0 and is largely obsolete.
+
+#### Use
+Use is the number of times this route has been looked up by the routing algorithm.
+It increments each time a packet needs routing and matches this route entry.
+Shows how frequently a particular route is being selected. Counter only increases, never decreases. It helps identify which routes are actively carrying traffic. Useful for network monitoring and optimization.
+
+#### Iface:
+The Iface is the physical or logical network interface card (NIC) through which packets should be sent. A system with multiple NICs needs to know which port to use.
+Each interface typically has its own IP address and connects to a different network
+The interface must be active for the route to work.
+
+##### Physical interfaces: 
+- Correspond to actual network hardware
+- Each typically connects to a different network segment
+
+**Examples**: if_e1, if_e2
+
+##### Virtual interfaces: 
+- Software-defined interfaces
+
+**Example**: lo (loopback)
+
 ### What ARP messages, and associated MAC addresses, are observed and why?
 
 ### What ICMP packets are observed and why?
@@ -192,7 +249,7 @@ pic!!
 ## Experience 5 - DNS
 
 ### How to configure the DNS service in a host?
-### What packets are exchanged by DNS and what information is transported
+### What packets are exchanged by DNS and what information is transported?
 
 ## Experience 6 - TCP connections
 
