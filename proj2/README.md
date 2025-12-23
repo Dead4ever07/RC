@@ -60,7 +60,11 @@ The login is handled by the function `ftpLogin` which handles the `USER` and `PA
  while taking into account the return codes sent from the server. It then tells the server that the transfer mode will be binary by sending the `TYPE I` command.
 
 
-### Passive Mode 
+### Passive Mode Username : demo
+Password : password
+Hostname : test.rebex.net
+Path     : /readme.txt
+IP       : 194.108.117.16
 
 The function that handles the logic behind the passive mode connection is the `enterPassiveMode`. 
 This function starts by sending the PASV command, and after receiving a successful response it extracts the extracts the `(h1,h2,h3,h4,p1,p2)` tuple and computes the data connection IP address and port. This information will be further used by the `connectionCreation` function to establish the connection.  

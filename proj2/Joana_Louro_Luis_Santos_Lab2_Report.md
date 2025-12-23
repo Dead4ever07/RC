@@ -33,7 +33,7 @@ The application is divided into the following logical components:
 This design improves readability, maintainability, and protocol correctness.
 
 
-– Report of a successful download, including print-screen of Wireshark logs showing the FTP packets -> Important ter a priint disto!!!!!
+– Report of a successful download, including print-screen of Wireshark logs showing the FTP packets -> Important ter a priint disto!!!!!!!!
 
 # Part 2 - Configuration and Study of a Network
 ## Experience 1 - Configure an IP Network
@@ -264,7 +264,6 @@ This separation provides:
 - Port: Server port 21
 - Purpose: Send FTP commands and receive server responses
 - Lifetime: Established first, remains open during entire FTP session, closed at the end
-- Protocol: Commands and responses are ASCII text ending with \r\n
 - Examples: USER, PASS, TYPE, PASV, RETR, QUIT commands
 
 #### Data Connection (Data Channel)
@@ -273,10 +272,34 @@ This separation provides:
 - Purpose: Transfer the actual file binary data
 - Lifetime: Opened after entering passive mode, closed after file transfer completes
 - Usage: File downloads, directory listings
-- Protocol: Binary data transfer
 
 ### In what connection is transported the FTP control information?
+The ftp control information is transported in the **Control connection**. This connection is established from the client to the server using TCP on port 21, and remains open for the duration of the FTP session. The control connection carries commands and responses, such as authentication credentials (username and password), directory navigation, and file operation commands.
+
 ### What are the phases of a TCP connection?
+#### Connection Establishment (3-Way Handshake)
+It establish connection and synchronize sequence number.
+Steps:
+1. Client → Server: SYN. Client sends TCP segment with SYN flag set and the Initial Sequence Number (ISN)
+2. Server → Client: SYN-ACK. Server responds with SYN and ACK flags set. Server's ISN. Acknowledges client's ISN 
+3. Client → Server: ACK. Client acknowledges server's ISN. Connection is now ESTABLISHED
+#### Data Transfer Phase
+Reliable data transmission with flow control and error recovery.
+Characteristics:
+- Bidirectional data flow
+- Sequence numbers track every byte
+- Acknowledgment: Receiver confirms received bytes
+- Segmentation: Large data divided into TCP segments 
+
+#### Connection Termination (4-Way Handshake)
+Gracefully close connection, ensuring all data is received.
+Steps:
+1. Client → Server: FIN. Client finished sending data (FIN flag set).
+2. Server → Client: ACK. Server acknowledges client's FIN.
+3. Server → Client: FIN. Server finished sending data (FIN flag set).
+4. Client → Server: ACK. Client acknowledges server's FIN.
+Connection fully closed.
+
 ### How does the ARQ TCP mechanism work? What are the relevant TCP fields? What relevant information can be observed in the logs?
 ### How does the TCP congestion control mechanism work? What are the relevant fields. How did the throughput of the data connection evolve along the time? Is it according to the TCP congestion control mechanism?
 ### Is the throughput of a TCP data connections disturbed by the appearance of a second TCP connection? How?
